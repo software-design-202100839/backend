@@ -15,6 +15,13 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_004", "접근 권한이 없습니다"),
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "AUTH_005", "비활성화된 계정입니다. 관리자에게 문의하세요"),
 
+    // Grade
+    SCORE_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_001", "성적 정보를 찾을 수 없습니다"),
+    SCORE_ALREADY_EXISTS(HttpStatus.CONFLICT, "GRADE_002", "해당 학기의 과목 성적이 이미 등록되어 있습니다"),
+    SUBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_003", "과목을 찾을 수 없습니다"),
+    STUDENT_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_004", "학생을 찾을 수 없습니다"),
+    TEACHER_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_005", "교사 정보를 찾을 수 없습니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
