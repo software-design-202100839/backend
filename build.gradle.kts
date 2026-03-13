@@ -1,7 +1,9 @@
 plugins {
 	java
+	jacoco
 	id("org.springframework.boot") version "3.5.0"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("org.sonarqube") version "6.0.1.5171"
 }
 
 group = "com.sscm"
@@ -50,4 +52,38 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+	toolVersion = "0.8.12"
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+tasks.jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				minimum = "0.30".toBigDecimal()
+			}
+		}
+	}
+}
+
+sonarqube {
+	properties {
+		property("sonar.projectKey", "sscm-backend")
+		property("sonar.projectName", "SSCM Backend")
+		property("sonar.sources", "src/main/java")
+		property("sonar.tests", "src/test/java")
+		property("sonar.java.coveragePlugin", "jacoco")
+		property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml")
+	}
 }
