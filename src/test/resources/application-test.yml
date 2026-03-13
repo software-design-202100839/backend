@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sscm
+    username: sscm
+    password: sscm1234
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  jpa:
+    show-sql: false
+
+jwt:
+  secret: ci-test-secret-key-that-is-long-enough-for-hmac-sha256
+  access-token-expiration: 1800000
+  refresh-token-expiration: 604800000
+
+logging:
+  level:
+    com.sscm: INFO
