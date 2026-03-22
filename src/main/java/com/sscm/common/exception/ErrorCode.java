@@ -22,6 +22,9 @@ public enum ErrorCode {
     STUDENT_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_004", "학생을 찾을 수 없습니다"),
     TEACHER_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_005", "교사 정보를 찾을 수 없습니다"),
 
+    // Feedback
+    FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "FEEDBACK_001", "피드백을 찾을 수 없습니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
