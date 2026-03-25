@@ -13,6 +13,19 @@ spring:
       host: localhost
       port: 6379
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 jwt:
   secret: sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
   access-token-expiration: 1800000

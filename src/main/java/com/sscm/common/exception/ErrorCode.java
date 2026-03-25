@@ -28,6 +28,9 @@ public enum ErrorCode {
     // Counsel
     COUNSELING_NOT_FOUND(HttpStatus.NOT_FOUND, "COUNSEL_001", "상담 내역을 찾을 수 없습니다"),
 
+    // Notification
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIF_001", "알림을 찾을 수 없습니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
