@@ -1,0 +1,25 @@
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# === Java/Spring ===
+build/
+.gradle/
+bin/
+*.class
+*.jar
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+.env
+
+# === 내부 문서 (비공개) ===
+docs/
+.claude/
+CLAUDE.md
