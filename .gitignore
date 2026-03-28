@@ -19,7 +19,6 @@ Thumbs.db
 # === Docker ===
 .env
 
-# === 내부 문서 (비공개) ===
-docs/
+# === 내부 설정 (비공개) ===
 .claude/
 CLAUDE.md
