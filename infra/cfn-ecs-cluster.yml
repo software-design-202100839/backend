@@ -76,8 +76,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: 0.0.0.0/0
-          Description: Backend API
+          SourceSecurityGroupId: !ImportValue sscm-alb-sg-id
+          Description: ALB only
       Tags:
         - Key: Name
           Value: sscm-backend-sg
@@ -91,8 +91,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
-          Description: Frontend Web
+          SourceSecurityGroupId: !ImportValue sscm-alb-sg-id
+          Description: ALB only
       Tags:
         - Key: Name
           Value: sscm-frontend-sg
@@ -148,9 +148,21 @@ Resources:
           Environment:
             - Name: SPRING_PROFILES_ACTIVE
               Value: !Ref Environment
-            # DB, Redis, JWT 시크릿은 SSCM-54에서 Parameter Store valueFrom으로 교체
             - Name: SERVER_PORT
               Value: '8080'
+          Secrets:
+            - Name: DB_URL
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/db-url
+            - Name: DB_USERNAME
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/db-username
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/db-password
+            - Name: JWT_SECRET
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/jwt-secret
+            - Name: REDIS_HOST
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/redis-host
+            - Name: ENCRYPTION_KEY
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/encryption-key
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -214,10 +226,14 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           SecurityGroups:
             - !Ref BackendSecurityGroup
           Subnets: !Ref SubnetIds
+      LoadBalancers:
+        - ContainerName: sscm-backend
+          ContainerPort: 8080
+          TargetGroupArn: !ImportValue sscm-backend-tg-arn
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
@@ -238,10 +254,14 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           SecurityGroups:
             - !Ref FrontendSecurityGroup
           Subnets: !Ref SubnetIds
+      LoadBalancers:
+        - ContainerName: sscm-frontend
+          ContainerPort: 80
+          TargetGroupArn: !ImportValue sscm-frontend-tg-arn
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
