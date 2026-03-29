@@ -1,0 +1,270 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  SSCM ALB + Parameter Store
+  SSCM-54: ALB 경로 라우팅 + Parameter Store 설정
+
+# ============================================================
+# Parameters
+# ============================================================
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: ALB가 배치될 VPC
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "ALB 서브넷 (퍼블릭, 2개 이상)"
+
+  # Parameter Store 초기값 — 배포 후 AWS 콘솔에서 실제 값으로 교체
+  DbUrl:
+    Type: String
+    Default: "jdbc:postgresql://sscm-db.xxxx.ap-northeast-2.rds.amazonaws.com:5432/sscm"
+    Description: "PostgreSQL JDBC URL"
+
+  DbUsername:
+    Type: String
+    Default: sscm
+    Description: DB username
+
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Default: CHANGE_ME
+    Description: DB password
+
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Default: CHANGE_ME
+    Description: JWT signing secret
+
+  RedisHost:
+    Type: String
+    Default: "sscm-redis.xxxx.cache.amazonaws.com"
+    Description: Redis endpoint
+
+  EncryptionKey:
+    Type: String
+    NoEcho: true
+    Default: CHANGE_ME
+    Description: "AES-256-GCM 암호화 키 (SSCM-55)"
+
+# ============================================================
+# Resources
+# ============================================================
+Resources:
+
+  # ----------------------------------------------------------
+  # ALB Security Group
+  # ----------------------------------------------------------
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB - HTTP/HTTPS
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS
+      Tags:
+        - Key: Name
+          Value: sscm-alb-sg
+
+  # ----------------------------------------------------------
+  # Application Load Balancer
+  # ----------------------------------------------------------
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: sscm-alb
+      Scheme: internet-facing
+      Type: application
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Subnets: !Ref SubnetIds
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  # ----------------------------------------------------------
+  # Target Groups
+  # ----------------------------------------------------------
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: sscm-backend-tg
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /actuator/health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  FrontendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: sscm-frontend-tg
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  # ----------------------------------------------------------
+  # Listener — HTTP (80)
+  # HTTPS는 ACM 인증서 발급 후 추가 (도메인 필요)
+  # ----------------------------------------------------------
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FrontendTargetGroup
+
+  # ----------------------------------------------------------
+  # Listener Rule — /api/* → Backend
+  # ----------------------------------------------------------
+  ApiListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 10
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/api/*"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  # WebSocket 경로도 Backend로 라우팅
+  WsListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 20
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/ws/*"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  # Actuator 경로 — Backend health/metrics
+  ActuatorListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 30
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/actuator/*"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  # ----------------------------------------------------------
+  # Parameter Store — 프로덕션 시크릿
+  # ----------------------------------------------------------
+  ParamDbUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/db-url
+      Type: String
+      Value: !Ref DbUrl
+      Description: PostgreSQL JDBC URL
+
+  ParamDbUsername:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/db-username
+      Type: String
+      Value: !Ref DbUsername
+      Description: DB username
+
+  ParamDbPassword:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/db-password
+      Type: String
+      Value: !Ref DbPassword
+      Description: DB password
+
+  ParamJwtSecret:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/jwt-secret
+      Type: String
+      Value: !Ref JwtSecret
+      Description: JWT signing secret
+
+  ParamRedisHost:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/redis-host
+      Type: String
+      Value: !Ref RedisHost
+      Description: Redis endpoint
+
+  ParamEncryptionKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/encryption-key
+      Type: String
+      Value: !Ref EncryptionKey
+      Description: "AES-256-GCM 암호화 키"
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  AlbDnsName:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Description: ALB DNS (브라우저에서 접속)
+    Export:
+      Name: sscm-alb-dns
+
+  AlbArn:
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: sscm-alb-arn
+
+  AlbSecurityGroupId:
+    Value: !Ref AlbSecurityGroup
+    Export:
+      Name: sscm-alb-sg-id
+
+  BackendTargetGroupArn:
+    Value: !Ref BackendTargetGroup
+    Export:
+      Name: sscm-backend-tg-arn
+
+  FrontendTargetGroupArn:
+    Value: !Ref FrontendTargetGroup
+    Export:
+      Name: sscm-frontend-tg-arn
