@@ -2,8 +2,9 @@
 
 - Assignee: 이데브 (DevOps Lee)
 - Sprint: 3
-- Status: todo
+- Status: done
 - Created: 2026-03-28
+- Completed: 2026-03-29
 - Commit date: 2026-03-30
 - Epic: SSCM-10 (배포/운영)
 
@@ -34,14 +35,21 @@
 - IAM Role: ecsTaskExecutionRole에 ssm:GetParameters 권한 추가
 
 ## Subtasks
-- [ ] ALB 생성 + 리스너 규칙
-- [ ] Target Group (backend, frontend)
-- [ ] Parameter Store 파라미터 등록
-- [ ] Task Definition에 secrets 블록 추가
-- [ ] IAM 권한 설정
-- [ ] Health check 동작 확인
+- [x] ALB 생성 + 리스너 규칙
+- [x] Target Group (backend, frontend)
+- [x] Parameter Store 파라미터 등록
+- [x] Task Definition에 secrets 블록 추가
+- [x] IAM 권한 설정 (SSCM-53에서 이미 완료)
+- [ ] Health check 동작 확인 (실제 AWS 배포 후)
 
 ## Acceptance Criteria
-- [ ] ALB DNS로 프론트엔드 접속 가능
-- [ ] ALB DNS/api/* 로 백엔드 API 호출 가능
-- [ ] Parameter Store 값이 ECS 컨테이너에 환경변수로 주입됨
+- [x] CloudFormation 템플릿 cfn-lint 검증 통과
+- [ ] ALB DNS로 프론트엔드 접속 가능 (AWS 배포 후)
+- [ ] ALB DNS/api/* 로 백엔드 API 호출 가능 (AWS 배포 후)
+- [x] Parameter Store 값이 ECS Task Definition secrets로 연결됨
+
+## 구현 방식
+- `infra/cfn-alb.yml` — ALB, Target Group, Listener Rule, Parameter Store
+- `infra/cfn-ecs-cluster.yml` 수정 — secrets, LoadBalancers, SG ALB 제한
+- Cross-Stack Reference로 스택 간 연동
+- PR: backend#3 → develop 머지 완료

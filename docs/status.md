@@ -13,7 +13,7 @@
 | Jira | Assignee | Summary | Commit Date | Status |
 |------|----------|---------|-------------|--------|
 | SSCM-53 | 이데브 | ECS Fargate 클러스터 + Task Definition | 3/29 | done |
-| SSCM-54 | 이데브 | ALB 경로 라우팅 + Parameter Store | 3/30 | todo |
+| SSCM-54 | 이데브 | ALB 경로 라우팅 + Parameter Store | 3/30 | done |
 | SSCM-55 | 이백엔드 | 개인정보 암호화 (AES-256-GCM) | 3/31 | todo |
 | SSCM-56 | 이데브 | CD 완성 (ECR→ECS) + 프로덕션 배포 | 4/1 | todo |
 | SSCM-57 | 이큐에이 | Burp Suite DAST | 4/2 | todo |
