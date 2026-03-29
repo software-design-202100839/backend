@@ -1,6 +1,6 @@
 # SSCM Project Status
 
-> Last updated: 2026-03-28 by session 2026-03-28-01
+> Last updated: 2026-03-29 by session 2026-03-29-01
 
 ## Current Sprint
 - Sprint: 3 (Jira ID: 133)
@@ -12,7 +12,7 @@
 ### 반드시 (Must) — 배포 + 보안
 | Jira | Assignee | Summary | Commit Date | Status |
 |------|----------|---------|-------------|--------|
-| SSCM-53 | 이데브 | ECS Fargate 클러스터 + Task Definition | 3/29 | todo |
+| SSCM-53 | 이데브 | ECS Fargate 클러스터 + Task Definition | 3/29 | done |
 | SSCM-54 | 이데브 | ALB 경로 라우팅 + Parameter Store | 3/30 | todo |
 | SSCM-55 | 이백엔드 | 개인정보 암호화 (AES-256-GCM) | 3/31 | todo |
 | SSCM-56 | 이데브 | CD 완성 (ECR→ECS) + 프로덕션 배포 | 4/1 | todo |
