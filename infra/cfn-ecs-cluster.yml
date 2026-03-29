@@ -1,0 +1,289 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  SSCM ECS Fargate Cluster + Task Definitions + Services
+  SSCM-53: ECS Fargate 클러스터 + Task Definition
+
+# ============================================================
+# Parameters
+# ============================================================
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [prod, dev]
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: ECS 서비스가 배치될 VPC
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: ECS 서비스가 배치될 서브넷 (2개 이상, AZ 분산)
+
+  BackendImage:
+    Type: String
+    Description: "Backend ECR 이미지 URI (예: 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-backend:latest)"
+
+  FrontendImage:
+    Type: String
+    Description: "Frontend ECR 이미지 URI (예: 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-frontend:latest)"
+
+# ============================================================
+# Resources
+# ============================================================
+Resources:
+
+  # ----------------------------------------------------------
+  # ECS Cluster
+  # ----------------------------------------------------------
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: sscm-cluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags:
+        - Key: Project
+          Value: sscm
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ----------------------------------------------------------
+  # CloudWatch Log Groups
+  # ----------------------------------------------------------
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/sscm-backend
+      RetentionInDays: 30
+
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/sscm-frontend
+      RetentionInDays: 30
+
+  # ----------------------------------------------------------
+  # Security Groups
+  # ----------------------------------------------------------
+  BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Backend ECS Service - port 8080
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          Description: Backend API
+      Tags:
+        - Key: Name
+          Value: sscm-backend-sg
+
+  FrontendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Frontend ECS Service - port 80
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Frontend Web
+      Tags:
+        - Key: Name
+          Value: sscm-frontend-sg
+
+  # ----------------------------------------------------------
+  # IAM - Task Execution Role
+  # ECS가 ECR pull, CloudWatch Logs write, Parameter Store read 할 수 있도록
+  # ----------------------------------------------------------
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sscm-ecs-task-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ssm-parameter-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/*
+
+  # ----------------------------------------------------------
+  # Task Definition - Backend
+  # ----------------------------------------------------------
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: sscm-backend
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: sscm-backend
+          Image: !Ref BackendImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          Environment:
+            - Name: SPRING_PROFILES_ACTIVE
+              Value: !Ref Environment
+            # DB, Redis, JWT 시크릿은 SSCM-54에서 Parameter Store valueFrom으로 교체
+            - Name: SERVER_PORT
+              Value: '8080'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref BackendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: backend
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:8080/actuator/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+
+  # ----------------------------------------------------------
+  # Task Definition - Frontend
+  # ----------------------------------------------------------
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: sscm-frontend
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: sscm-frontend
+          Image: !Ref FrontendImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FrontendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:80/ || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+
+  # ----------------------------------------------------------
+  # ECS Service - Backend
+  # ----------------------------------------------------------
+  BackendService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: sscm-backend
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref BackendTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref BackendSecurityGroup
+          Subnets: !Ref SubnetIds
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  # ----------------------------------------------------------
+  # ECS Service - Frontend
+  # ----------------------------------------------------------
+  FrontendService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: sscm-frontend
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref FrontendTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref FrontendSecurityGroup
+          Subnets: !Ref SubnetIds
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      Tags:
+        - Key: Project
+          Value: sscm
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  ClusterName:
+    Value: !Ref EcsCluster
+    Export:
+      Name: sscm-cluster-name
+
+  ClusterArn:
+    Value: !GetAtt EcsCluster.Arn
+    Export:
+      Name: sscm-cluster-arn
+
+  BackendServiceName:
+    Value: !GetAtt BackendService.Name
+    Export:
+      Name: sscm-backend-service-name
+
+  FrontendServiceName:
+    Value: !GetAtt FrontendService.Name
+    Export:
+      Name: sscm-frontend-service-name
+
+  BackendSecurityGroupId:
+    Value: !Ref BackendSecurityGroup
+    Export:
+      Name: sscm-backend-sg-id
+
+  FrontendSecurityGroupId:
+    Value: !Ref FrontendSecurityGroup
+    Export:
+      Name: sscm-frontend-sg-id
+
+  EcsTaskExecutionRoleArn:
+    Value: !GetAtt EcsTaskExecutionRole.Arn
+    Export:
+      Name: sscm-ecs-execution-role-arn
