@@ -26,6 +26,9 @@ spring:
             enable: true
             required: true
 
+encryption:
+  key: c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=
+
 jwt:
   secret: sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
   access-token-expiration: 1800000
