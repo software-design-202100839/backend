@@ -1,5 +1,7 @@
 package com.sscm.auth.entity;
 
+import com.sscm.common.crypto.EncryptedStringConverter;
+import com.sscm.common.crypto.EncryptionUtil;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,8 +18,12 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String email;
+
+    @Column(name = "email_hash", nullable = false, unique = true, length = 64)
+    private String emailHash;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -25,7 +31,8 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 20)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(columnDefinition = "TEXT")
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -46,4 +53,12 @@ public class User {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @PrePersist
+    @PreUpdate
+    void computeEmailHash() {
+        if (this.email != null) {
+            this.emailHash = EncryptionUtil.sha256(this.email);
+        }
+    }
 }

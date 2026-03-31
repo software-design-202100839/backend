@@ -2,6 +2,7 @@ package com.sscm.counsel.entity;
 
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
+import com.sscm.common.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -34,9 +35,11 @@ public class Counseling {
     @Column(nullable = false, length = 30)
     private CounselCategory category;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "next_plan", columnDefinition = "TEXT")
     private String nextPlan;
 

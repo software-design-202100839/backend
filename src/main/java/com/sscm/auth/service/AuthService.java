@@ -3,6 +3,7 @@ package com.sscm.auth.service;
 import com.sscm.auth.dto.*;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
+import com.sscm.common.crypto.EncryptionUtil;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class AuthService {
 
     @Transactional
     public UserResponse signup(SignupRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailHash(EncryptionUtil.sha256(request.getEmail()))) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
         }
 
@@ -47,7 +48,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailHash(EncryptionUtil.sha256(request.getEmail()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_FAILED));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
