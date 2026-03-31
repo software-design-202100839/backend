@@ -1,6 +1,6 @@
 # SSCM Project Status
 
-> Last updated: 2026-03-29 by session 2026-03-29-01
+> Last updated: 2026-03-31 by session 2026-03-31-01
 
 ## Current Sprint
 - Sprint: 3 (Jira ID: 133)
@@ -14,7 +14,7 @@
 |------|----------|---------|-------------|--------|
 | SSCM-53 | 이데브 | ECS Fargate 클러스터 + Task Definition | 3/29 | done |
 | SSCM-54 | 이데브 | ALB 경로 라우팅 + Parameter Store | 3/30 | done |
-| SSCM-55 | 이백엔드 | 개인정보 암호화 (AES-256-GCM) | 3/31 | todo |
+| SSCM-55 | 이백엔드 | 개인정보 암호화 (AES-256-GCM) | 3/31 | done |
 | SSCM-56 | 이데브 | CD 완성 (ECR→ECS) + 프로덕션 배포 | 4/1 | todo |
 | SSCM-57 | 이큐에이 | Burp Suite DAST | 4/2 | todo |
 
@@ -53,9 +53,9 @@
 - [ ] ECS Fargate에서 backend + frontend 컨테이너 Running
 - [ ] ALB URL로 전 기능 접속 가능
 - [ ] develop push → 자동 배포 (ECR→ECS) 동작
-- [ ] 개인정보 암호화 적용 (DB 평문 노출 안 됨)
+- [x] 개인정보 암호화 적용 (DB 평문 노출 안 됨) — AES-256-GCM, PR #4
 - [ ] Burp Suite DAST 리포트 생성, Critical 0건
-- [ ] JUnit 테스트 전체 통과 유지
+- [x] JUnit 테스트 전체 통과 유지 — 106개 (0 fail)
 
 ## Next Up (Sprint 4, 4/5~4/11) — 운영 + 모니터링 + 문서화
 - Prometheus + Grafana (상시 모니터링)
