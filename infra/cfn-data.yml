@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  SSCM Data Layer — RDS PostgreSQL + ElastiCache Redis
+  SSCM-56: 프로덕션 데이터 스토어
+
+# ============================================================
+# Parameters
+# ============================================================
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: 데이터 스토어가 배치될 VPC
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "서브넷 (2개 이상, AZ 분산)"
+
+  VpcCidr:
+    Type: String
+    Default: "172.31.0.0/16"
+    Description: "VPC CIDR 블록 (기본 VPC: 172.31.0.0/16)"
+
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Default: sscm1234!
+    Description: "PostgreSQL 마스터 비밀번호"
+
+# ============================================================
+# Resources
+# ============================================================
+Resources:
+
+  # ----------------------------------------------------------
+  # Security Groups
+  # ----------------------------------------------------------
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS PostgreSQL - port 5432
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref VpcCidr
+          Description: VPC internal
+      Tags:
+        - Key: Name
+          Value: sscm-rds-sg
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache Redis - port 6379
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: !Ref VpcCidr
+          Description: VPC internal
+      Tags:
+        - Key: Name
+          Value: sscm-redis-sg
+
+  # ----------------------------------------------------------
+  # RDS PostgreSQL
+  # ----------------------------------------------------------
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: SSCM RDS subnets
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: sscm-db
+      Engine: postgres
+      EngineVersion: '16'
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBName: sscm
+      MasterUsername: sscm
+      MasterUserPassword: !Ref DbPassword
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 0
+      DeletionProtection: false
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  # ----------------------------------------------------------
+  # ElastiCache Redis
+  # ----------------------------------------------------------
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: SSCM Redis subnets
+      SubnetIds: !Ref SubnetIds
+
+  RedisCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      ClusterName: sscm-redis
+      Engine: redis
+      CacheNodeType: cache.t3.micro
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      Tags:
+        - Key: Project
+          Value: sscm
+
+# ============================================================
+# Outputs — Parameter Store 업데이트에 사용
+# ============================================================
+Outputs:
+  RdsEndpoint:
+    Value: !GetAtt RdsInstance.Endpoint.Address
+    Description: RDS endpoint address
+    Export:
+      Name: sscm-rds-endpoint
+
+  RdsJdbcUrl:
+    Value: !Sub "jdbc:postgresql://${RdsInstance.Endpoint.Address}:5432/sscm"
+    Description: "Parameter Store /sscm/prod/db-url 에 입력할 값"
+
+  RedisEndpoint:
+    Value: !GetAtt RedisCluster.RedisEndpoint.Address
+    Description: "Parameter Store /sscm/prod/redis-host 에 입력할 값"
+    Export:
+      Name: sscm-redis-endpoint
