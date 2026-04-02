@@ -7,9 +7,11 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: sscm-backend
+  ECS_CLUSTER: sscm-cluster
+  ECS_SERVICE: sscm-backend
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +30,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
+        id: build
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -36,11 +39,32 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # Sprint 3에서 추가: ECS 서비스 업데이트
-      # - name: Deploy to ECS
-      #   run: |
-      #     aws ecs update-service \
-      #       --cluster sscm-cluster \
-      #       --service sscm-backend \
-      #       --force-new-deployment
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment
+
+      - name: Wait for deployment stable
+        run: |
+          echo "Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE
+
+      - name: Verify deployment
+        run: |
+          TASK_ARN=$(aws ecs list-tasks \
+            --cluster $ECS_CLUSTER \
+            --service-name $ECS_SERVICE \
+            --desired-status RUNNING \
+            --query 'taskArns[0]' --output text)
+          echo "Running task: $TASK_ARN"
+          aws ecs describe-tasks \
+            --cluster $ECS_CLUSTER \
+            --tasks $TASK_ARN \
+            --query 'tasks[0].{status:lastStatus,health:healthStatus,startedAt:startedAt}' \
+            --output table
