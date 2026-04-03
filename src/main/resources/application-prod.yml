@@ -35,6 +35,18 @@ jwt:
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    redis:
+      enabled: false
+
 logging:
   level:
     com.sscm: INFO
