@@ -68,11 +68,13 @@ public class AuthService {
                 jwtTokenProvider.getRemainingExpiration(refreshToken)
         );
 
+        Long roleEntityId = resolveRoleEntityId(user);
+
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtTokenProvider.getAccessTokenExpiration() / 1000)
-                .user(UserResponse.from(user))
+                .user(UserResponse.from(user, roleEntityId))
                 .build();
     }
 
@@ -121,7 +123,7 @@ public class AuthService {
     public UserResponse getMe(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return UserResponse.from(user);
+        return UserResponse.from(user, resolveRoleEntityId(user));
     }
 
     private void createRoleDetail(User user, Role role, Map<String, Object> detail) {
@@ -158,6 +160,14 @@ public class AuthService {
                 parentRepository.save(parent);
             }
         }
+    }
+
+    private Long resolveRoleEntityId(User user) {
+        return switch (user.getRole()) {
+            case TEACHER -> teacherRepository.findByUser(user).map(Teacher::getId).orElse(null);
+            case STUDENT -> studentRepository.findByUser(user).map(Student::getId).orElse(null);
+            case PARENT -> null;
+        };
     }
 
     private Integer toInteger(Object value) {

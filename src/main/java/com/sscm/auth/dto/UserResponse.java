@@ -14,6 +14,7 @@ public class UserResponse {
     private String email;
     private String name;
     private String role;
+    private Long roleEntityId;
 
     public static UserResponse from(User user) {
         return UserResponse.builder()
@@ -21,6 +22,16 @@ public class UserResponse {
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(user.getRole().name())
+                .build();
+    }
+
+    public static UserResponse from(User user, Long roleEntityId) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(user.getRole().name())
+                .roleEntityId(roleEntityId)
                 .build();
     }
 }
