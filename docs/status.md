@@ -16,7 +16,7 @@
 | SSCM-54 | 이데브 | ALB 경로 라우팅 + Parameter Store | 3/30 | done |
 | SSCM-55 | 이백엔드 | 개인정보 암호화 (AES-256-GCM) | 3/31 | done |
 | SSCM-56 | 이데브 | CD 완성 (ECR→ECS) + 프로덕션 배포 | 4/1~4/3 | done |
-| SSCM-57 | 이큐에이 | Burp Suite DAST | 4/4 | todo |
+| SSCM-57 | 이큐에이 | OWASP ZAP DAST (Critical 0, High 0) | 4/3 | done |
 
 ### 가능하면 (Nice-to-have)
 | Jira | Assignee | Summary | Commit Date | Status |
@@ -24,7 +24,9 @@
 | SSCM-58 | 이백엔드 | @Version + @Retryable (Sprint 2 이월) | - | todo |
 
 ### 미생성 (시간 여유 시)
-- 학생 로그인 UX 개선 (내 정보만 바로 보이도록)
+- 학생부 content JSON 표시 → 카테고리별 렌더링
+- 피드백 isVisibleToStudent 기본값 → 학생 공개 로직 점검
+- 상담내역 학생 권한 조회 허용
 - 보고서 생성 API/UI (새 스택 적용)
 - 상담 필터링 보강
 - Testcontainers
