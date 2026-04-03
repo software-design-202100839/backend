@@ -145,7 +145,9 @@ public class AuthService {
                         .grade((Integer) detail.get("grade"))
                         .classNum((Integer) detail.get("classNum"))
                         .studentNum((Integer) detail.get("studentNum"))
-                        .admissionYear((Integer) detail.get("admissionYear"))
+                        .admissionYear(detail.get("admissionYear") != null
+                                ? (Integer) detail.get("admissionYear")
+                                : java.time.Year.now().getValue())
                         .build();
                 studentRepository.save(student);
             }
