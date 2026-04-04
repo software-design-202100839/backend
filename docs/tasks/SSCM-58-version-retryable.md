@@ -1,10 +1,10 @@
 # SSCM-58: @Version Optimistic Locking + @Retryable 이메일 재시도
 
 - Assignee: 이백엔드 (Backend Lee)
-- Sprint: 3 (Nice-to-have, Sprint 2에서 이월)
+- Sprint: 4 (Nice-to-have, Sprint 2 → 3 → 4 이월)
 - Status: todo
 - Created: 2026-03-28
-- Commit date: 2026-04-03
+- Commit date: TBD (Sprint 4)
 - Epic: SSCM-1 (프로젝트 셋업)
 
 ## Requirement
