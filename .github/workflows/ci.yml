@@ -55,6 +55,9 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts') }}
           restore-keys: gradle-
 
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
       - name: Run tests + JaCoCo
         run: ./gradlew test jacocoTestReport --no-daemon
         env:
