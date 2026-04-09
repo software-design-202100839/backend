@@ -25,6 +25,11 @@ Parameters:
     Default: admin
     Description: Grafana admin password
 
+  GmailAppPassword:
+    Type: String
+    NoEcho: true
+    Description: Gmail app password for SMTP
+
 Resources:
 
   # Log Group
@@ -129,6 +134,18 @@ Resources:
               Value: "true"
             - Name: GF_USERS_ALLOW_SIGN_UP
               Value: "false"
+            - Name: GF_SMTP_ENABLED
+              Value: "true"
+            - Name: GF_SMTP_HOST
+              Value: "smtp.gmail.com:587"
+            - Name: GF_SMTP_USER
+              Value: "seungheelee1122@gmail.com"
+            - Name: GF_SMTP_PASSWORD
+              Value: !Ref GmailAppPassword
+            - Name: GF_SMTP_FROM_ADDRESS
+              Value: "seungheelee1122@gmail.com"
+            - Name: GF_SMTP_FROM_NAME
+              Value: "SSCM Monitoring"
           LogConfiguration:
             LogDriver: awslogs
             Options:
