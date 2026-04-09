@@ -1,0 +1,3 @@
+FROM grafana/grafana:10.4.0
+COPY grafana-prod/provisioning /etc/grafana/provisioning
+COPY grafana/dashboards /var/lib/grafana/dashboards

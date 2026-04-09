@@ -34,6 +34,12 @@ jwt:
   access-token-expiration: 1800000
   refresh-token-expiration: 604800000
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+
 logging:
   level:
     com.sscm: DEBUG
