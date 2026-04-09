@@ -1,0 +1,10 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: sscm-email
+    receivers:
+      - uid: sscm-email-receiver
+        type: email
+        settings:
+          addresses: 202100839@inu.ac.kr
+          singleEmail: true

@@ -1,0 +1,114 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: sscm-alerts
+    folder: SSCM
+    interval: 1m
+    rules:
+      - uid: http-5xx-alert
+        title: HTTP 5xx 에러 발생
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              expr: sum(increase(http_server_requests_seconds_count{application="sscm-backend",status=~"5.."}[5m])) or vector(0)
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+        for: 0s
+        annotations:
+          summary: "5xx 에러가 감지되었습니다. 즉시 확인이 필요합니다."
+        labels:
+          severity: critical
+
+      - uid: heap-usage-alert
+        title: JVM Heap 사용률 90% 초과
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              expr: jvm_memory_used_bytes{application="sscm-backend",area="heap"} / jvm_memory_max_bytes{application="sscm-backend",area="heap"}
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.9]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+        for: 2m
+        annotations:
+          summary: "JVM Heap 메모리 사용률이 90%를 초과했습니다."
+        labels:
+          severity: warning
+
+      - uid: hikaricp-exhaustion-alert
+        title: HikariCP 커넥션 풀 고갈 위험
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              expr: hikaricp_connections_pending{application="sscm-backend"}
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+        for: 1m
+        annotations:
+          summary: "DB 커넥션 대기 요청이 발생했습니다. 커넥션 풀이 부족할 수 있습니다."
+        labels:
+          severity: warning
