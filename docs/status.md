@@ -21,8 +21,8 @@
 | - | 이데브 | ~~PagerDuty~~ → Grafana Alerting으로 대체 | 4/9 | **done** |
 | - | 이데브 | k6 부하 테스트 | 4/9 | **done** |
 | - | 이백엔드 | k6 결과 분석 → Redis @Cacheable 도입 판단 | 4/9 | **done** (불필요 판단, k6/REPORT.md 참조) |
-| - | 이데브 | 백업/복구 절차 | 4/9~10 | **next** |
-| - | 이큐에이 | SonarCloud 최종 점검 + 보안 리포트 | 4/10 | todo |
+| - | 이데브 | 백업/복구 절차 | 4/9 | **done** |
+| - | 이큐에이 | SonarCloud 연동 + CI 파이프라인 | 4/9 | **done** |
 | - | 전원 | 전체 문서 정리 | 4/10~11 | todo |
 
 ### 이월 (Sprint 3 → 4) — 우선순위 하향
