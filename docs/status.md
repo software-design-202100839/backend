@@ -1,6 +1,6 @@
 # SSCM Project Status
 
-> Last updated: 2026-04-04 by session 2026-04-04-01
+> Last updated: 2026-04-09 by session 2026-04-09-01
 
 ## Current Sprint
 - Sprint: 4 (Jira ID: 미생성)
@@ -16,19 +16,19 @@
 ### 반드시 (Must) — 운영 + 모니터링
 | Jira | Assignee | Summary | Commit Date | Status |
 |------|----------|---------|-------------|--------|
-| - | 이데브 | Prometheus + Grafana 설정 | 4/5~6 | todo |
-| - | 이데브 | Dynatrace APM 연동 (15일 체험) | 4/6 | todo |
-| - | 이데브 | PagerDuty 인시던트 관리 연동 | 4/7 | todo |
-| - | 이데브 | k6 부하 테스트 | 4/7~8 | todo |
-| - | 이백엔드 | k6 결과 분석 → Redis @Cacheable 도입 판단 | 4/8 | todo |
-| - | 이데브 | 백업/복구 절차 | 4/9 | todo |
-| - | 이큐에이 | SonarCloud 최종 점검 + 보안 리포트 | 4/9~10 | todo |
+| - | 이데브 | Prometheus + Grafana 설정 | 4/9 | **done** |
+| - | 이데브 | ~~Dynatrace APM 연동~~ | - | **스킵** (Prometheus+Grafana와 기능 중복, 설계적 근거 없음) |
+| - | 이데브 | ~~PagerDuty~~ → Grafana Alerting으로 대체 | 4/9 | **done** |
+| - | 이데브 | k6 부하 테스트 | 4/9 | **done** |
+| - | 이백엔드 | k6 결과 분석 → Redis @Cacheable 도입 판단 | 4/9 | **done** (불필요 판단, k6/REPORT.md 참조) |
+| - | 이데브 | 백업/복구 절차 | 4/9~10 | **next** |
+| - | 이큐에이 | SonarCloud 최종 점검 + 보안 리포트 | 4/10 | todo |
 | - | 전원 | 전체 문서 정리 | 4/10~11 | todo |
 
-### 이월 (Sprint 3 → 4)
-| Jira | Assignee | Summary | Status |
-|------|----------|---------|--------|
-| SSCM-58 | 이백엔드 | @Version + @Retryable | todo |
+### 이월 (Sprint 3 → 4) — 우선순위 하향
+| Jira | Assignee | Summary | Status | 비고 |
+|------|----------|---------|--------|------|
+| SSCM-58 | 이백엔드 | @Version + @Retryable | todo | 백업/복구, SonarCloud, 문서 정리가 더 급하여 후순위 |
 
 ### 발견된 개선 사항 (시간 여유 시)
 - 학생부 content JSON 표시 → 카테고리별 렌더링
@@ -37,13 +37,14 @@
 - 보고서 생성 API/UI
 
 ## AWS 인프라 현황
-- ALB: `sscm-alb-162195414.ap-northeast-2.elb.amazonaws.com`
+- ALB: `sscm-alb-1703346258.ap-northeast-2.elb.amazonaws.com`
 - ECS 클러스터: `sscm-cluster` (backend + frontend 서비스)
 - RDS: `sscm-db.cvsqwimyifjw.ap-northeast-2.rds.amazonaws.com` (PostgreSQL 16)
 - Redis: `sscm-redis.xvtaov.0001.apn2.cache.amazonaws.com`
 - ECR: `sscm-backend`, `sscm-frontend`
 - CloudFormation 스택: `sscm-alb`, `sscm-data`, `sscm-ecs`
-- **현재 상태:** sscm-ecs 스택 삭제됨 (비용 절감). 필요 시 재생성.
+- **현재 상태:** 3개 스택 + sscm-monitoring 스택 가동 중 (2026-04-09 재구축)
+- Grafana: `http://sscm-alb-1703346258.ap-northeast-2.elb.amazonaws.com/grafana/` (admin/sscm2026!)
 
 ## 비용 관리
 - 전체 스택 가동 시 ~$47/월 (~$1.5/일)
