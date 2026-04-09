@@ -94,7 +94,8 @@ Resources:
       DBSubnetGroupName: !Ref DbSubnetGroup
       PubliclyAccessible: false
       MultiAZ: false
-      BackupRetentionPeriod: 0
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "18:00-19:00"
       DeletionProtection: false
       Tags:
         - Key: Project
