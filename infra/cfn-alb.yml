@@ -268,3 +268,8 @@ Outputs:
     Value: !Ref FrontendTargetGroup
     Export:
       Name: sscm-frontend-tg-arn
+
+  HttpListenerArn:
+    Value: !Ref HttpListener
+    Export:
+      Name: sscm-http-listener-arn
