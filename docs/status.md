@@ -43,8 +43,8 @@
 - Redis: `sscm-redis.xvtaov.0001.apn2.cache.amazonaws.com`
 - ECR: `sscm-backend`, `sscm-frontend`
 - CloudFormation 스택: `sscm-alb`, `sscm-data`, `sscm-ecs`
-- **현재 상태:** 3개 스택 + sscm-monitoring 스택 가동 중 (2026-04-09 재구축)
-- Grafana: `http://sscm-alb-1703346258.ap-northeast-2.elb.amazonaws.com/grafana/` (admin/sscm2026!)
+- **현재 상태:** 전체 스택 삭제됨 (2026-04-09 비용 절감). 다음 작업 시 재구축 필요.
+- Grafana 접속: 스택 재구축 후 ALB DNS/grafana/ (admin/sscm2026!)
 
 ## 비용 관리
 - 전체 스택 가동 시 ~$47/월 (~$1.5/일)
