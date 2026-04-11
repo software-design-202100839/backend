@@ -3,8 +3,14 @@
 > Last updated: 2026-04-11 by session 2026-04-11-01
 
 ## Current Sprint
+- **Sprint 5 진행 중** (Jira Sprint ID: 200, 2026-04-11 ~ 2026-04-18)
+- 목표: 시험기간 cadence 유지. 회귀 점검 1건만(SSCM-65).
+- 다음: Sprint 6(4/18~4/25) 동일 패턴, Sprint 7(4/25~5/2) 실제 발표 준비.
+- 매주 토요일 사용자 트리거로 sprint close (한 줄 메시지면 충분).
+- 회고: `docs/sprint/sprint-5.md`
+
+## 직전 Sprint
 - **Sprint 4 종료** (Jira Sprint ID: 167, 2026-04-11 close)
-- 다음 일정: W13~14 발표 준비. 신규 기능 개발 없음.
 - 회고: `docs/sprint/sprint-4.md`
 
 ## Sprint 3 결과 (2026-03-29 ~ 2026-04-04) — 완료
