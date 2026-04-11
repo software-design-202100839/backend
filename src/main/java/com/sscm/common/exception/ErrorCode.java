@@ -34,7 +34,8 @@ public enum ErrorCode {
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 등록된 이메일입니다");
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 등록된 이메일입니다"),
+    CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "COMMON_004", "다른 사용자가 먼저 수정했습니다. 새로고침 후 다시 시도해주세요");
 
     private final HttpStatus httpStatus;
     private final String code;

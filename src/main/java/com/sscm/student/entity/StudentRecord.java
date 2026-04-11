@@ -53,6 +53,11 @@ public class StudentRecord {
     @Column(name = "updated_by")
     private Long updatedBy;
 
+    @Version
+    @Column(nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     public void updateContent(Map<String, Object> content, Long updatedBy) {
         this.content = content;
         this.updatedBy = updatedBy;

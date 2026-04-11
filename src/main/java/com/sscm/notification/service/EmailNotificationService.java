@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmailNotificationService {
 
-    private final JavaMailSender mailSender;
+    private final RetryableEmailSender retryableEmailSender;
     private final UserRepository userRepository;
 
     @Value("${spring.mail.username:noreply@sscm.dev}")
@@ -25,23 +24,20 @@ public class EmailNotificationService {
     @Async
     public void sendEmailNotification(NotificationEvent event) {
         for (Long recipientId : event.getRecipientIds()) {
-            try {
-                User recipient = userRepository.findById(recipientId).orElse(null);
-                if (recipient == null || recipient.getEmail() == null) {
-                    continue;
-                }
-
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setFrom(fromAddress);
-                message.setTo(recipient.getEmail());
-                message.setSubject("[SSCM] " + event.getTitle());
-                message.setText(event.getMessage());
-                mailSender.send(message);
-
-                log.debug("이메일 발송 완료: to={}, subject={}", recipient.getEmail(), event.getTitle());
-            } catch (Exception e) {
-                log.warn("이메일 발송 실패: recipientId={}, error={}", recipientId, e.getMessage());
+            User recipient = userRepository.findById(recipientId).orElse(null);
+            if (recipient == null || recipient.getEmail() == null) {
+                continue;
             }
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(recipient.getEmail());
+            message.setSubject("[SSCM] " + event.getTitle());
+            message.setText(event.getMessage());
+
+            // SSCM-58: RetryableEmailSender가 MailException 발생 시 최대 3회 재시도.
+            // 모두 실패하면 @Recover에서 로그만 남기고 정상 종료(다른 수신자 발송 계속).
+            retryableEmailSender.send(message);
         }
     }
 }

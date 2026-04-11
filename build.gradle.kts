@@ -36,6 +36,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
+	// Retry (SSCM-58: @Retryable for email send + optimistic lock recovery)
+	implementation("org.springframework.retry:spring-retry")
+	implementation("org.springframework:spring-aspects")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
 	// JWT

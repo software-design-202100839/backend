@@ -58,6 +58,11 @@ public class Counseling {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Version
+    @Column(nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     public void update(LocalDate counselDate, CounselCategory category, String content,
                        String nextPlan, LocalDate nextCounselDate, Boolean isShared) {
         this.counselDate = counselDate;
