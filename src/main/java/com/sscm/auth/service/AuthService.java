@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -24,29 +24,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
-    public UserResponse signup(SignupRequest request) {
-        if (userRepository.existsByEmailHash(EncryptionUtil.sha256(request.getEmail()))) {
-            throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
-        }
-
-        Role role = Role.valueOf(request.getRole());
-        User user = User.builder()
-                .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
-                .phone(request.getPhone())
-                .role(role)
-                .build();
-        userRepository.save(user);
-
-        createRoleDetail(user, role, request.getRoleDetail());
-
-        return UserResponse.from(user);
-    }
-
-    @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest request) {
         User user = userRepository.findByEmailHash(EncryptionUtil.sha256(request.getEmail()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_FAILED));
@@ -59,64 +39,45 @@ public class AuthService {
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        tokenBlacklistService.saveRefreshToken(
-                user.getId(),
-                refreshToken,
-                jwtTokenProvider.getRemainingExpiration(refreshToken)
-        );
-
-        Long roleEntityId = resolveRoleEntityId(user);
-
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(jwtTokenProvider.getAccessTokenExpiration() / 1000)
-                .user(UserResponse.from(user, roleEntityId))
-                .build();
+        return issueTokens(user);
     }
 
+    @Transactional
     public TokenResponse refresh(RefreshRequest request) {
-        String refreshToken = request.getRefreshToken();
+        String rawRt = request.getRefreshToken();
 
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtTokenProvider.validateToken(rawRt)) {
             throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        Long userId = jwtTokenProvider.getUserId(refreshToken);
-        String storedToken = tokenBlacklistService.getRefreshToken(userId);
+        String tokenHash = EncryptionUtil.sha256(rawRt);
+        RefreshToken stored = refreshTokenService.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
 
-        if (storedToken == null || !storedToken.equals(refreshToken)) {
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        if (stored.isExpired()) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        User user = userRepository.findById(userId)
+        // Rotation: 기존 RT 즉시 삭제
+        refreshTokenService.deleteByTokenHash(tokenHash);
+
+        User user = userRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole());
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        tokenBlacklistService.saveRefreshToken(
-                user.getId(),
-                newRefreshToken,
-                jwtTokenProvider.getRemainingExpiration(newRefreshToken)
-        );
-
-        return TokenResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .expiresIn(jwtTokenProvider.getAccessTokenExpiration() / 1000)
-                .build();
+        return issueTokens(user);
     }
 
-    public void logout(String accessToken, Long userId) {
-        long remaining = jwtTokenProvider.getRemainingExpiration(accessToken);
-        if (remaining > 0) {
-            tokenBlacklistService.blacklistAccessToken(accessToken, remaining);
+    @Transactional
+    public void logout(String rawAccessToken, String rawRefreshToken) {
+        long remainingMillis = jwtTokenProvider.getRemainingExpiration(rawAccessToken);
+        if (remainingMillis > 0) {
+            Instant expiresAt = Instant.now().plusMillis(remainingMillis);
+            tokenBlacklistService.addToBlacklist(EncryptionUtil.sha256(rawAccessToken), expiresAt);
         }
-        tokenBlacklistService.deleteRefreshToken(userId);
+
+        if (rawRefreshToken != null) {
+            refreshTokenService.deleteByTokenHash(EncryptionUtil.sha256(rawRefreshToken));
+        }
     }
 
     @Transactional(readOnly = true)
@@ -126,53 +87,26 @@ public class AuthService {
         return UserResponse.from(user, resolveRoleEntityId(user));
     }
 
-    private void createRoleDetail(User user, Role role, Map<String, Object> detail) {
-        if (detail == null) {
-            detail = Map.of();
-        }
+    private TokenResponse issueTokens(User user) {
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        switch (role) {
-            case TEACHER -> {
-                Teacher teacher = Teacher.builder()
-                        .user(user)
-                        .department((String) detail.get("department"))
-                        .homeroomGrade(toInteger(detail.get("homeroomGrade")))
-                        .homeroomClass(toInteger(detail.get("homeroomClass")))
-                        .build();
-                teacherRepository.save(teacher);
-            }
-            case STUDENT -> {
-                Student student = Student.builder()
-                        .user(user)
-                        .grade((Integer) detail.get("grade"))
-                        .classNum((Integer) detail.get("classNum"))
-                        .studentNum((Integer) detail.get("studentNum"))
-                        .admissionYear(detail.get("admissionYear") != null
-                                ? (Integer) detail.get("admissionYear")
-                                : java.time.Year.now().getValue())
-                        .build();
-                studentRepository.save(student);
-            }
-            case PARENT -> {
-                Parent parent = Parent.builder()
-                        .user(user)
-                        .build();
-                parentRepository.save(parent);
-            }
-        }
+        Instant rtExpiresAt = Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration());
+        refreshTokenService.save(user.getId(), EncryptionUtil.sha256(refreshToken), rtExpiresAt);
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(jwtTokenProvider.getAccessTokenExpiration() / 1000)
+                .user(UserResponse.from(user, resolveRoleEntityId(user)))
+                .build();
     }
 
     private Long resolveRoleEntityId(User user) {
         return switch (user.getRole()) {
             case TEACHER -> teacherRepository.findByUser(user).map(Teacher::getId).orElse(null);
             case STUDENT -> studentRepository.findByUser(user).map(Student::getId).orElse(null);
-            case PARENT -> null;
+            case PARENT, ADMIN -> null;
         };
-    }
-
-    private Integer toInteger(Object value) {
-        if (value == null) return null;
-        if (value instanceof Integer) return (Integer) value;
-        return Integer.parseInt(value.toString());
     }
 }
