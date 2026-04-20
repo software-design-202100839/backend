@@ -38,6 +38,17 @@ public enum ErrorCode {
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIF_001", "알림을 찾을 수 없습니다"),
 
+    // Admin
+    PHONE_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_001", "이미 등록된 전화번호입니다"),
+    PARENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "학부모를 찾을 수 없습니다"),
+    CLASS_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_003", "반을 찾을 수 없습니다"),
+    CLASS_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_004", "이미 생성된 반입니다"),
+    ENROLLMENT_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_005", "해당 학년도에 이미 배정된 학생입니다"),
+    STUDENT_NUM_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_006", "해당 반에 이미 사용 중인 번호입니다"),
+    ASSIGNMENT_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_007", "이미 등록된 배정입니다"),
+    ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_008", "배정 정보를 찾을 수 없습니다"),
+    PARENT_CHILD_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_009", "이미 연결된 학부모-학생 관계입니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
