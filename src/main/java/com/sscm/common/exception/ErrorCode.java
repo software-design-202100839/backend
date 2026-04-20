@@ -14,6 +14,13 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "유효하지 않은 토큰입니다"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_004", "접근 권한이 없습니다"),
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "AUTH_005", "비활성화된 계정입니다. 관리자에게 문의하세요"),
+    ACCOUNT_LOCKED(HttpStatus.valueOf(423), "AUTH_006", "로그인 시도 초과로 잠금되었습니다"),
+    OTP_INVALID(HttpStatus.BAD_REQUEST, "AUTH_007", "인증번호가 올바르지 않습니다"),
+    OTP_EXPIRED(HttpStatus.BAD_REQUEST, "AUTH_008", "인증번호가 만료되었습니다. 다시 요청해주세요"),
+    OTP_EXHAUSTED(HttpStatus.BAD_REQUEST, "AUTH_009", "인증번호가 폐기되었습니다. 다시 요청해주세요"),
+    ACCOUNT_NOT_ACTIVATED(HttpStatus.CONFLICT, "AUTH_010", "활성화되지 않은 계정입니다"),
+    ACCOUNT_ALREADY_ACTIVATED(HttpStatus.CONFLICT, "AUTH_011", "이미 활성화된 계정입니다"),
+    OTP_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "AUTH_012", "잠시 후 다시 시도해주세요"),
 
     // Grade
     SCORE_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_001", "성적 정보를 찾을 수 없습니다"),
@@ -34,7 +41,7 @@ public enum ErrorCode {
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 등록된 이메일입니다"),
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 사용 중입니다"),
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "COMMON_004", "다른 사용자가 먼저 수정했습니다. 새로고침 후 다시 시도해주세요");
 
     private final HttpStatus httpStatus;
