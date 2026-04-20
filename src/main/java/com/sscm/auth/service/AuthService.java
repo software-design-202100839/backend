@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -25,6 +26,7 @@ public class AuthService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final ParentRepository parentRepository;
+    private final ParentStudentRepository parentStudentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
@@ -193,7 +195,7 @@ public class AuthService {
     public UserResponse getMe(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return UserResponse.from(user, resolveRoleEntityId(user));
+        return UserResponse.from(user, resolveRoleEntityId(user), resolveChildren(user));
     }
 
     private TokenResponse issueTokens(User user) {
@@ -207,7 +209,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtTokenProvider.getAccessTokenExpiration() / 1000)
-                .user(UserResponse.from(user, resolveRoleEntityId(user)))
+                .user(UserResponse.from(user, resolveRoleEntityId(user), resolveChildren(user)))
                 .build();
     }
 
@@ -217,5 +219,19 @@ public class AuthService {
             case STUDENT -> studentRepository.findByUser(user).map(Student::getId).orElse(null);
             case PARENT, ADMIN -> null;
         };
+    }
+
+    private List<UserResponse.ChildInfo> resolveChildren(User user) {
+        if (user.getRole() != Role.PARENT) {
+            return null;
+        }
+        return parentRepository.findByUser(user)
+                .map(parent -> parentStudentRepository.findByParent(parent).stream()
+                        .map(ps -> UserResponse.ChildInfo.builder()
+                                .id(ps.getStudent().getId())
+                                .name(ps.getStudent().getUser().getName())
+                                .build())
+                        .toList())
+                .orElse(List.of());
     }
 }

@@ -21,10 +21,4 @@ public class Teacher {
 
     @Column(length = 50)
     private String department;
-
-    @Column(name = "homeroom_grade")
-    private Integer homeroomGrade;
-
-    @Column(name = "homeroom_class")
-    private Integer homeroomClass;
 }

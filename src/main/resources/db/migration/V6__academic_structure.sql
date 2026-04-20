@@ -82,7 +82,7 @@ COMMENT ON TABLE teacher_assignments IS '교사-반-과목 배정. 성적/세특
 -- 6-1. 기존 카테고리 CHECK 제약 제거 후 재정의
 ALTER TABLE student_records DROP CONSTRAINT IF EXISTS student_records_category_check;
 ALTER TABLE student_records ADD CONSTRAINT student_records_category_check
-    CHECK (category IN ('BASIC', 'SPECIAL', 'ATTENDANCE', 'AWARD', 'VOLUNTEER', 'OTHER'));
+    CHECK (category IN ('ATTENDANCE', 'GENERAL_OPINION', 'AWARD', 'VOLUNTEER', 'SPECIAL_NOTE', 'OTHER'));
 
 -- 6-2. 세특용 과목 FK (BASIC이면 NULL)
 ALTER TABLE student_records ADD COLUMN subject_id BIGINT REFERENCES subjects(id) ON DELETE SET NULL;
