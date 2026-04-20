@@ -63,10 +63,15 @@ public class ScoreController {
 
     @Operation(summary = "학생별 학기 성적 조회", description = "학생의 특정 학기 전 과목 성적 + 총점/평균 조회")
     @GetMapping("/students/{studentId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN', 'STUDENT', 'PARENT')")
     public ResponseEntity<ApiResponse<StudentScoreSummary>> getStudentScores(
             @PathVariable Long studentId,
             @RequestParam Integer year,
-            @RequestParam Integer semester) {
+            @RequestParam Integer semester,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        scoreService.checkStudentAccess(userId, role, studentId);
         StudentScoreSummary summary = scoreService.getStudentScores(studentId, year, semester);
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
