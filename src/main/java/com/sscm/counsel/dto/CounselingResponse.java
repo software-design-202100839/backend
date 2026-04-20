@@ -22,7 +22,6 @@ public class CounselingResponse {
     private String content;
     private String nextPlan;
     private LocalDate nextCounselDate;
-    private Boolean isShared;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -38,7 +37,6 @@ public class CounselingResponse {
                 .content(counseling.getContent())
                 .nextPlan(counseling.getNextPlan())
                 .nextCounselDate(counseling.getNextCounselDate())
-                .isShared(counseling.getIsShared())
                 .createdAt(counseling.getCreatedAt())
                 .updatedAt(counseling.getUpdatedAt())
                 .build();

@@ -27,6 +27,4 @@ public class CounselingRequest {
     private String nextPlan;
 
     private LocalDate nextCounselDate;
-
-    private Boolean isShared = true;
 }

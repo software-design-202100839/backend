@@ -23,12 +23,6 @@ public interface CounselingRepository extends JpaRepository<Counseling, Long> {
 
     @Query("SELECT c FROM Counseling c JOIN FETCH c.student s JOIN FETCH s.user " +
             "JOIN FETCH c.teacher t JOIN FETCH t.user " +
-            "WHERE c.student.id = :studentId AND c.isShared = true " +
-            "ORDER BY c.counselDate DESC")
-    List<Counseling> findSharedByStudentIdWithDetails(@Param("studentId") Long studentId);
-
-    @Query("SELECT c FROM Counseling c JOIN FETCH c.student s JOIN FETCH s.user " +
-            "JOIN FETCH c.teacher t JOIN FETCH t.user " +
             "WHERE c.student.id = :studentId AND c.category = :category " +
             "ORDER BY c.counselDate DESC")
     List<Counseling> findByStudentIdAndCategoryWithDetails(

@@ -12,9 +12,6 @@ public class StudentInfoResponse {
     private String name;
     private String email;
     private String phone;
-    private Integer grade;
-    private Integer classNum;
-    private Integer studentNum;
     private Integer admissionYear;
 
     public static StudentInfoResponse from(Student student) {
@@ -23,9 +20,6 @@ public class StudentInfoResponse {
                 .name(student.getUser().getName())
                 .email(student.getUser().getEmail())
                 .phone(student.getUser().getPhone())
-                .grade(student.getGrade())
-                .classNum(student.getClassNum())
-                .studentNum(student.getStudentNum())
                 .admissionYear(student.getAdmissionYear())
                 .build();
     }

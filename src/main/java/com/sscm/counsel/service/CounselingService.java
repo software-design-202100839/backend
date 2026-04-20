@@ -45,7 +45,6 @@ public class CounselingService {
                 .content(request.getContent())
                 .nextPlan(request.getNextPlan())
                 .nextCounselDate(request.getNextCounselDate())
-                .isShared(request.getIsShared())
                 .build();
 
         Counseling saved = counselingRepository.save(counseling);
@@ -68,24 +67,10 @@ public class CounselingService {
                 request.getCategory(),
                 request.getContent(),
                 request.getNextPlan(),
-                request.getNextCounselDate(),
-                request.getIsShared()
+                request.getNextCounselDate()
         );
 
         return CounselingResponse.from(counseling);
-    }
-
-    @Transactional
-    public void deleteCounseling(Long counselingId, Long currentUserId) {
-        Counseling counseling = counselingRepository.findById(counselingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COUNSELING_NOT_FOUND));
-
-        Teacher teacher = findTeacherByUserId(currentUserId);
-        if (!counseling.getTeacher().getId().equals(teacher.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
-        }
-
-        counselingRepository.delete(counseling);
     }
 
     public CounselingResponse getCounseling(Long counselingId) {
@@ -106,14 +91,6 @@ public class CounselingService {
         }
 
         return counselings.stream().map(CounselingResponse::from).toList();
-    }
-
-    public List<CounselingResponse> getSharedCounselingsByStudent(Long studentId) {
-        studentRepository.findById(studentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
-
-        return counselingRepository.findSharedByStudentIdWithDetails(studentId)
-                .stream().map(CounselingResponse::from).toList();
     }
 
     public List<CounselingResponse> getMyCounselings(Long currentUserId) {
