@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 @RequestMapping("/api/v1/dev")
 @RequiredArgsConstructor
 @Profile("dev")
+@SuppressWarnings("java:S2068") // dev-only seed credential, not a production secret
 public class DevSeedController {
 
     private static final String ADMIN_EMAIL    = "admin@sscm.dev";
@@ -66,7 +67,7 @@ public class DevSeedController {
 
         log.info("[DEV SEED] ADMIN 계정 생성 완료: {}", ADMIN_EMAIL);
         return ResponseEntity.ok(ApiResponse.success(
-                new SeedResult("ADMIN 생성 완료", ADMIN_EMAIL + " / " + ADMIN_PASSWORD)));
+                new SeedResult("ADMIN 생성 완료", ADMIN_EMAIL)));
     }
 
     public record SeedResult(String message, String credential) {}
