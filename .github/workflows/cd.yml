@@ -89,9 +89,11 @@ jobs:
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
             # 최신 백엔드 이미지 pull → 서비스 재시작 (다운타임 최소화)
-            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml pull backend
-            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml up -d \
-              --no-deps --wait backend
+            # --env-file: compose 파일 변수 치환용 (.env.prod에서 DB_PASSWORD 등 로드)
+            IMAGE_TAG=$IMAGE_TAG docker compose --env-file .env.prod \
+              -f docker-compose.prod.yml pull backend
+            IMAGE_TAG=$IMAGE_TAG docker compose --env-file .env.prod \
+              -f docker-compose.prod.yml up -d --no-deps --wait backend
 
       # 헬스체크: /actuator/health 가 UP 반환하는지 확인
       - name: Health check
