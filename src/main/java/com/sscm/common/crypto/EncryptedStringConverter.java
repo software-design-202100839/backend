@@ -17,6 +17,9 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 
     @Override
     public String convertToEntityAttribute(String dbData) {
+        if (dbData == null || dbData.isBlank()) {
+            return null;
+        }
         return EncryptionContextHolder.get().decrypt(dbData);
     }
 }

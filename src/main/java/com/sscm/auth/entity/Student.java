@@ -19,15 +19,6 @@ public class Student {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(nullable = false)
-    private Integer grade;
-
-    @Column(name = "class_num", nullable = false)
-    private Integer classNum;
-
-    @Column(name = "student_num", nullable = false)
-    private Integer studentNum;
-
     @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
 }

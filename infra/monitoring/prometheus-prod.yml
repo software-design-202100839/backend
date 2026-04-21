@@ -6,6 +6,6 @@ scrape_configs:
   - job_name: 'sscm-backend'
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['sscm-alb-1703346258.ap-northeast-2.elb.amazonaws.com:80']
+      - targets: ['backend:8080']
         labels:
           environment: prod

@@ -83,7 +83,7 @@ class StudentRecordControllerTest {
     private StudentInfoResponse sampleStudentInfo() {
         return StudentInfoResponse.builder()
                 .id(1L).name("이학생").email("student@test.com")
-                .grade(2).classNum(3).studentNum(15).admissionYear(2025)
+                .phone("010-1234-5678").admissionYear(2025)
                 .build();
     }
 
@@ -128,8 +128,8 @@ class StudentRecordControllerTest {
 
             mockMvc.perform(get("/api/v1/students/1").with(teacher()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.grade").value(2))
-                    .andExpect(jsonPath("$.data.classNum").value(3));
+                    .andExpect(jsonPath("$.data.name").value("이학생"))
+                    .andExpect(jsonPath("$.data.admissionYear").value(2025));
         }
 
         @Test

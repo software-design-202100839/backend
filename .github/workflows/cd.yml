@@ -1,18 +1,24 @@
 name: Backend CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI (Test + SonarCloud)"]
     branches: [develop]
+    types: [completed]
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: sscm-backend
-  ECS_CLUSTER: sscm-cluster
-  ECS_SERVICE: sscm-backend
 
 jobs:
-  build-and-deploy:
+  # ── 1단계: Docker 이미지 빌드 → ECR 푸시 ────────────────────────────────────
+  build-and-push:
+    # CI가 성공했을 때만 실행
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.build.outputs.image-tag }}
+      ecr-registry: ${{ steps.login-ecr.outputs.registry }}
 
     steps:
       - name: Checkout
@@ -36,35 +42,59 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                      $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
-            --force-new-deployment
+  # ── 2단계: EC2 SSH → docker compose pull & up ────────────────────────────────
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
 
-      - name: Wait for deployment stable
-        run: |
-          echo "Waiting for ECS service to stabilize..."
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Verify deployment
+      # docker-compose.prod.yml + nginx.conf을 EC2로 전송
+      - name: Copy config files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml,infra/nginx/nginx.conf"
+          target: /opt/sscm
+
+      # EC2에서 새 이미지로 백엔드만 재시작
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_REGISTRY: ${{ needs.build-and-push.outputs.ecr-registry }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_REGISTRY,IMAGE_TAG
+          script: |
+            cd /opt/sscm
+
+            # ECR 로그인 (EC2 인스턴스 프로파일 또는 환경변수 자격증명 사용)
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            # 최신 백엔드 이미지 pull → 서비스 재시작 (다운타임 최소화)
+            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml pull backend
+            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml up -d \
+              --no-deps --wait backend
+
+      # 헬스체크: /actuator/health 가 UP 반환하는지 확인
+      - name: Health check
         run: |
-          TASK_ARN=$(aws ecs list-tasks \
-            --cluster $ECS_CLUSTER \
-            --service-name $ECS_SERVICE \
-            --desired-status RUNNING \
-            --query 'taskArns[0]' --output text)
-          echo "Running task: $TASK_ARN"
-          aws ecs describe-tasks \
-            --cluster $ECS_CLUSTER \
-            --tasks $TASK_ARN \
-            --query 'tasks[0].{status:lastStatus,health:healthStatus,startedAt:startedAt}' \
-            --output table
+          echo "Waiting for application to start..."
+          sleep 20
+          curl -sf "http://${{ secrets.EC2_HOST }}/actuator/health" \
+            | grep -q '"status":"UP"'
+          echo "Health check passed"

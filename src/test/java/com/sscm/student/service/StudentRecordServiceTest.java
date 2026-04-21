@@ -55,7 +55,7 @@ class StudentRecordServiceTest {
                 .id(1L).email("student@test.com").name("이학생")
                 .passwordHash("hash").role(Role.STUDENT).phone("010-1234-5678").build();
         student = Student.builder()
-                .id(1L).user(studentUser).grade(2).classNum(3).studentNum(15).admissionYear(2025).build();
+                .id(1L).user(studentUser).admissionYear(2025).build();
     }
 
     private StudentRecord createRecord(Long id, RecordCategory category, Map<String, Object> content) {
@@ -123,18 +123,18 @@ class StudentRecordServiceTest {
         }
 
         @Test
-        @DisplayName("특기사항을 정상 등록한다")
-        void specialNote() throws Exception {
-            Map<String, Object> content = Map.of("내용", "수학 경시대회 금상 수상");
-            StudentRecordRequest request = createRecordRequest(1L, RecordCategory.SPECIAL_NOTE, content);
-            StudentRecord saved = createRecord(1L, RecordCategory.SPECIAL_NOTE, content);
+        @DisplayName("BASIC 학생부를 정상 등록한다")
+        void basicRecord() throws Exception {
+            Map<String, Object> content = Map.of("내용", "성실히 학업에 임함");
+            StudentRecordRequest request = createRecordRequest(1L, RecordCategory.BASIC, content);
+            StudentRecord saved = createRecord(1L, RecordCategory.BASIC, content);
 
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
             given(studentRecordRepository.save(any(StudentRecord.class))).willReturn(saved);
 
             StudentRecordResponse result = studentRecordService.createRecord(request, 1L);
 
-            assertThat(result.getCategory()).isEqualTo(RecordCategory.SPECIAL_NOTE);
+            assertThat(result.getCategory()).isEqualTo(RecordCategory.BASIC);
         }
 
         @Test
@@ -184,33 +184,6 @@ class StudentRecordServiceTest {
     }
 
     @Nested
-    @DisplayName("학생부 삭제")
-    class DeleteRecord {
-
-        @Test
-        @DisplayName("정상 삭제된다")
-        void success() {
-            StudentRecord existing = createRecord(1L, RecordCategory.ATTENDANCE, Map.of("결석", 0));
-            given(studentRecordRepository.findById(1L)).willReturn(Optional.of(existing));
-
-            studentRecordService.deleteRecord(1L);
-
-            verify(studentRecordRepository).delete(existing);
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 레코드면 RESOURCE_NOT_FOUND 예외")
-        void notFound() {
-            given(studentRecordRepository.findById(999L)).willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> studentRecordService.deleteRecord(999L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
-                            .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
-        }
-    }
-
-    @Nested
     @DisplayName("학생부 조회")
     class GetRecord {
 
@@ -246,7 +219,7 @@ class StudentRecordServiceTest {
         @DisplayName("카테고리 필터 없이 전체 조회")
         void withoutCategory() {
             StudentRecord r1 = createRecord(1L, RecordCategory.ATTENDANCE, Map.of("결석", 1));
-            StudentRecord r2 = createRecord(2L, RecordCategory.SPECIAL_NOTE, Map.of("내용", "우수"));
+            StudentRecord r2 = createRecord(2L, RecordCategory.BASIC, Map.of("내용", "우수"));
 
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
             given(studentRecordRepository.findByStudentIdAndYearAndSemester(1L, 2026, 1))
@@ -310,9 +283,7 @@ class StudentRecordServiceTest {
             StudentInfoResponse result = studentRecordService.getStudentInfo(1L);
 
             assertThat(result.getName()).isEqualTo("이학생");
-            assertThat(result.getGrade()).isEqualTo(2);
-            assertThat(result.getClassNum()).isEqualTo(3);
-            assertThat(result.getStudentNum()).isEqualTo(15);
+            assertThat(result.getAdmissionYear()).isEqualTo(2025);
         }
 
         @Test
@@ -337,7 +308,7 @@ class StudentRecordServiceTest {
             User user2 = User.builder().id(3L).email("s2@test.com").name("박학생")
                     .passwordHash("hash").role(Role.STUDENT).build();
             Student student2 = Student.builder()
-                    .id(2L).user(user2).grade(1).classNum(2).studentNum(10).admissionYear(2026).build();
+                    .id(2L).user(user2).admissionYear(2026).build();
 
             given(studentRepository.findAll()).willReturn(List.of(student, student2));
 

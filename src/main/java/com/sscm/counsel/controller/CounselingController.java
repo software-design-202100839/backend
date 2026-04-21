@@ -28,7 +28,7 @@ public class CounselingController {
 
     private final CounselingService counselingService;
 
-    @Operation(summary = "상담 내역 등록", description = "교사가 학생과의 상담 내역을 등록한다")
+    @Operation(summary = "상담 내역 등록")
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ApiResponse<CounselingResponse>> createCounseling(
@@ -39,7 +39,7 @@ public class CounselingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
-    @Operation(summary = "상담 내역 수정", description = "작성한 교사만 상담 내역을 수정할 수 있다")
+    @Operation(summary = "상담 내역 수정 — 작성자만 가능")
     @PutMapping("/{counselingId}")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ApiResponse<CounselingResponse>> updateCounseling(
@@ -51,29 +51,18 @@ public class CounselingController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "상담 내역 삭제", description = "작성한 교사만 상담 내역을 삭제할 수 있다")
-    @DeleteMapping("/{counselingId}")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<ApiResponse<Void>> deleteCounseling(
-            @PathVariable Long counselingId,
-            Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
-        counselingService.deleteCounseling(counselingId, userId);
-        return ResponseEntity.ok(ApiResponse.success("상담 내역이 삭제되었습니다"));
-    }
-
     @Operation(summary = "상담 내역 단건 조회")
     @GetMapping("/{counselingId}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CounselingResponse>> getCounseling(
             @PathVariable Long counselingId) {
         CounselingResponse response = counselingService.getCounseling(counselingId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "학생별 상담 내역 조회", description = "본인이 작성한 + 공유된 상담 내역을 조회한다. 카테고리 필터 가능")
+    @Operation(summary = "학생별 상담 내역 조회")
     @GetMapping("/students/{studentId}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<CounselingResponse>>> getCounselingsByStudent(
             @PathVariable Long studentId,
             @RequestParam(required = false) CounselCategory category) {
@@ -81,16 +70,7 @@ public class CounselingController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    @Operation(summary = "공유된 상담 내역 조회", description = "다른 교사가 공유한 상담 내역을 조회한다")
-    @GetMapping("/students/{studentId}/shared")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<ApiResponse<List<CounselingResponse>>> getSharedCounselings(
-            @PathVariable Long studentId) {
-        List<CounselingResponse> responses = counselingService.getSharedCounselingsByStudent(studentId);
-        return ResponseEntity.ok(ApiResponse.success(responses));
-    }
-
-    @Operation(summary = "내 상담 내역 조회", description = "로그인한 교사가 자신이 진행한 모든 상담을 조회한다")
+    @Operation(summary = "내 상담 내역 조회")
     @GetMapping("/my")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ApiResponse<List<CounselingResponse>>> getMyCounselings(
@@ -100,9 +80,9 @@ public class CounselingController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    @Operation(summary = "상담 내역 검색", description = "학생별 기간 검색")
+    @Operation(summary = "상담 내역 기간 검색")
     @GetMapping("/students/{studentId}/search")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<CounselingResponse>>> searchCounselings(
             @PathVariable Long studentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,

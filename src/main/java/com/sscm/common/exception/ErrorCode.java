@@ -14,6 +14,13 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "유효하지 않은 토큰입니다"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_004", "접근 권한이 없습니다"),
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "AUTH_005", "비활성화된 계정입니다. 관리자에게 문의하세요"),
+    ACCOUNT_LOCKED(HttpStatus.valueOf(423), "AUTH_006", "로그인 시도 초과로 잠금되었습니다"),
+    OTP_INVALID(HttpStatus.BAD_REQUEST, "AUTH_007", "인증번호가 올바르지 않습니다"),
+    OTP_EXPIRED(HttpStatus.BAD_REQUEST, "AUTH_008", "인증번호가 만료되었습니다. 다시 요청해주세요"),
+    OTP_EXHAUSTED(HttpStatus.BAD_REQUEST, "AUTH_009", "인증번호가 폐기되었습니다. 다시 요청해주세요"),
+    ACCOUNT_NOT_ACTIVATED(HttpStatus.CONFLICT, "AUTH_010", "활성화되지 않은 계정입니다"),
+    ACCOUNT_ALREADY_ACTIVATED(HttpStatus.CONFLICT, "AUTH_011", "이미 활성화된 계정입니다"),
+    OTP_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "AUTH_012", "잠시 후 다시 시도해주세요"),
 
     // Grade
     SCORE_NOT_FOUND(HttpStatus.NOT_FOUND, "GRADE_001", "성적 정보를 찾을 수 없습니다"),
@@ -31,10 +38,21 @@ public enum ErrorCode {
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIF_001", "알림을 찾을 수 없습니다"),
 
+    // Admin
+    PHONE_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_001", "이미 등록된 전화번호입니다"),
+    PARENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "학부모를 찾을 수 없습니다"),
+    CLASS_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_003", "반을 찾을 수 없습니다"),
+    CLASS_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_004", "이미 생성된 반입니다"),
+    ENROLLMENT_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_005", "해당 학년도에 이미 배정된 학생입니다"),
+    STUDENT_NUM_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_006", "해당 반에 이미 사용 중인 번호입니다"),
+    ASSIGNMENT_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_007", "이미 등록된 배정입니다"),
+    ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_008", "배정 정보를 찾을 수 없습니다"),
+    PARENT_CHILD_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_009", "이미 연결된 학부모-학생 관계입니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 등록된 이메일입니다"),
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "COMMON_003", "이미 사용 중입니다"),
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "COMMON_004", "다른 사용자가 먼저 수정했습니다. 새로고침 후 다시 시도해주세요");
 
     private final HttpStatus httpStatus;

@@ -46,10 +46,6 @@ public class Counseling {
     @Column(name = "next_counsel_date")
     private LocalDate nextCounselDate;
 
-    @Column(name = "is_shared", nullable = false)
-    @Builder.Default
-    private Boolean isShared = true;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -64,13 +60,12 @@ public class Counseling {
     private Long version = 0L;
 
     public void update(LocalDate counselDate, CounselCategory category, String content,
-                       String nextPlan, LocalDate nextCounselDate, Boolean isShared) {
+                       String nextPlan, LocalDate nextCounselDate) {
         this.counselDate = counselDate;
         this.category = category;
         this.content = content;
         this.nextPlan = nextPlan;
         this.nextCounselDate = nextCounselDate;
-        this.isShared = isShared;
         this.updatedAt = LocalDateTime.now();
     }
 }

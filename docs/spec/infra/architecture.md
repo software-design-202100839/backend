@@ -1,152 +1,216 @@
 # 시스템 아키텍처
 
-- **최종 수정:** 2026-04-09 (모니터링 구현 완료, Dynatrace/PagerDuty → Grafana 통합)
+- **최종 수정:** 2026-04-20 (인프라 재설계 — EC2 + Docker Compose)
+
+> **변경 이력**
+> - 2026-04-09: ECS Fargate + ALB + Redis 구조
+> - 2026-04-20: EC2 + Nginx + Docker Compose로 전환. Redis 제거. SMS 알림 도입.
+>   - 선택 이유: 단일 학교(~수백 명) 규모에서 ECS/ALB/Redis는 과잉 설계. 비용 1/3 절감, 운영 단순화.
+
+---
 
 ## 전체 구조
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     클라이언트                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  교사 (웹)    │  │  학생 (웹)    │  │ 학부모 (웹)   │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-└─────────┼──────────────────┼──────────────────┼─────────┘
-          │                  │                  │
-          │             HTTPS (TLS)             │
-          ▼                  ▼                  ▼
-┌─────────────────────────────────────────────────────────┐
-│                      AWS ALB                             │
-│           (HTTPS 터미네이션, 경로 기반 라우팅)              │
-│        ACM 인증서 · 헬스체크 · 로드밸런싱                   │
-│                                                          │
-│    /api/* → Backend     /* → Frontend                    │
-└────────────────────────┬────────────────────────────────┘
-                         │
-          ┌──────────────┼──────────────┐
-          ▼                             ▼
-┌──────────────────┐          ┌──────────────────┐
-│  ECS Fargate     │          │  ECS Fargate     │
-│  Frontend Task   │          │  Backend Task    │
-│                  │          │                  │
-│  React 19+TS     │          │  Spring Boot 3.5 │
-│  (Nginx 서빙)    │   REST   │                  │
-│                  │◄────────►│  Spring Security  │
-│  - 성적 입력 폼   │          │  (JWT + RBAC)    │
-│  - 레이더 차트    │   WS     │                  │
-│  - 상담 타임라인  │◄────────►│  WebSocket(STOMP)│
-│  - 알림 센터     │          │                  │
-└──────────────────┘          └────────┬──────────┘
-                                       │
-                         ┌─────────────┼─────────────┐
-                         ▼             ▼             ▼
-               ┌──────────────┐ ┌──────────┐ ┌───────────┐
-               │ PostgreSQL 16│ │  Redis 7 │ │Spring Mail│
-               │  (AWS RDS)   │ │          │ │ (SMTP)    │
-               │              │ │          │ │           │
-               │ - 사용자      │ │ - JWT    │ │ - 알림    │
-               │ - 성적        │ │  블랙리스트│ │   이메일   │
-               │ - 학생부      │ │ - Refresh│ │           │
-               │ - 피드백      │ │   Token  │ │           │
-               │ - 상담        │ │          │ │           │
-               └──────────────┘ └──────────┘ └───────────┘
-
-                         ┌─────────────────────────────────┐
-                         │    모니터링 (ECS Fargate Task)      │
-                         │                                   │
-                         │  Prometheus ← Backend /actuator   │
-                         │      ↓         /prometheus        │
-                         │  Grafana (SSCM Overview 대시보드)   │
-                         │      ↓                            │
-                         │  Grafana Alerting → Gmail SMTP    │
-                         │  (HTTP 5xx, Heap 90%, HikariCP)   │
-                         └─────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                         클라이언트                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ 교사 (웹)    │  │ 학생 (웹)    │  │ 학부모 (웹)  │          │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
+└─────────┼────────────────┼────────────────┼──────────────────┘
+          │                │                │
+          │           HTTP (Port 80)        │
+          ▼                ▼                ▼
+┌──────────────────────────────────────────────────────────────┐
+│                       EC2 (t3.small)                          │
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │                  Nginx (리버스 프록시)                    │  │
+│  │                                                         │  │
+│  │   /api/*   →  backend:8080                              │  │
+│  │   /*       →  frontend:80                               │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌────────────────────┐    ┌────────────────────────────┐    │
+│  │  Frontend          │    │  Backend                   │    │
+│  │  (React 19 + TS)   │    │  (Spring Boot 3.5)         │    │
+│  │                    │REST│                            │    │
+│  │  - 성적 입력/조회   │◄──►│  Spring Security           │    │
+│  │  - 레이더 차트      │    │  (JWT + RBAC)              │    │
+│  │  - 학생부 통합 뷰   │ WS │                            │    │
+│  │  - 상담 타임라인    │◄──►│  WebSocket (STOMP)         │    │
+│  │  - ADMIN 관리 화면  │    │                            │    │
+│  └────────────────────┘    └──────────┬─────────────────┘    │
+│                                       │                       │
+│                         ┌─────────────┘                       │
+│                         ▼                                     │
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │              PostgreSQL 16 (Docker Volume)            │    │
+│  │                                                       │    │
+│  │  - users, teachers, students, parents                 │    │
+│  │  - classes, student_enrollments, teacher_assignments  │    │
+│  │  - scores, student_records, feedbacks, counselings    │    │
+│  │  - refresh_tokens, token_blacklist, invite_tokens     │    │
+│  │  - audit_logs, notifications                          │    │
+│  └──────────────────────────────────────────────────────┘    │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              │ SMS (Solapi API)
+                              ▼
+                    ┌─────────────────┐
+                    │  Solapi SMS     │
+                    │                 │
+                    │  - OTP 발송     │
+                    │  - 알림 발송    │
+                    │  (민감정보 제외) │
+                    └─────────────────┘
 ```
 
-### 인프라 선택 근거
+---
 
-| 항목 | 선택 | 대안 | 선택 이유 |
-|------|------|------|-----------|
-| 오케스트레이션 | ECS Fargate | EKS | 비용 1/5 (EKS 컨트롤 플레인 월 $73 vs ECS 실행 시간만 과금), 운영 부담 1/3. 2~3개 서비스에 EKS는 과잉. |
-| 로드밸런서 | ALB | Nginx Ingress | ECS + ALB 네이티브 연동. HTTPS 터미네이션, 경로 기반 라우팅, 헬스체크 기본 제공. |
-| 시크릿 관리 | Parameter Store | Secrets Manager | 표준 파라미터 무료 + SecureString 암호화. ECS Task Definition에서 직접 참조. |
-| 컨테이너 레지스트리 | ECR | GHCR / Docker Hub | ECS와 동일 IAM 체계, imagePull에 별도 인증 불필요. |
+## 인프라 재설계 근거
+
+| 항목 | 기존 | 변경 | 이유 |
+|------|------|------|------|
+| 컨테이너 실행 | ECS Fargate | EC2 + Docker Compose | 단일 인스턴스면 오케스트레이터 불필요. 배포 단순화 |
+| 로드밸런서 | ALB (~$18/월) | Nginx (무료) | 분산할 인스턴스가 1개 → ALB의 존재 이유 없음 |
+| 세션 저장소 | Redis | PostgreSQL 테이블 | 토큰 TTL 관리는 @Scheduled 배치로 대체. 장애 지점 감소 |
+| 알림 채널 | 이메일 (Spring Mail) | SMS (Solapi) | 학부모·학생 실사용 채널. 스팸 없음, 즉시 수신 |
+| 비용 | ~$1.5/일 | ~$0.5/일 | EC2 t3.small 기준 약 1/3 수준 |
+
+---
+
+## Docker Compose 구성 (프로덕션)
+
+```yaml
+# docker-compose.prod.yml 구조
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports: ["80:80"]
+    depends_on: [backend, frontend]
+
+  frontend:
+    image: {ECR}/sscm-frontend:latest
+    environment:
+      - VITE_API_BASE_URL=/api/v1
+
+  backend:
+    image: {ECR}/sscm-backend:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=postgres
+      - JWT_SECRET, ENCRYPTION_KEY (환경변수 주입)
+      - SOLAPI_API_KEY, SOLAPI_API_SECRET
+    depends_on: [postgres]
+
+  postgres:
+    image: postgres:16
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    environment:
+      - POSTGRES_DB=sscm
+```
+
+---
 
 ## CI/CD 파이프라인
 
 ```
 Developer (페르소나)
     │
-    │ git push → feature branch
+    │ git push → feature/SSCM-{N}-{slug}
     ▼
-GitHub (PR 생성)
+GitHub Actions CI
+    │
+    ├─ PostgreSQL 서비스 컨테이너 (테스트용)
+    ├─ ./gradlew test jacocoTestReport
+    ├─ JaCoCo 커버리지 확인 (최소 30%)
+    └─ SonarCloud 정적 분석
+    │
+    │ PR → develop 병합
+    ▼
+GitHub Actions CD
+    │
+    ├─ Docker build (backend / frontend)
+    ├─ ECR push (latest 태그)
+    │
+    └─ SSH → EC2
+           docker compose pull
+           docker compose up -d --no-deps backend frontend
+```
+
+---
+
+## 보안 아키텍처
+
+```
+클라이언트 요청
     │
     ▼
-GitHub Actions ──────────────────────────────────────
+Nginx (HTTP)
+    │  /api/* 프록시
+    ▼
+JwtAuthenticationFilter
+    ├─ Bearer 토큰 추출
+    ├─ JWT 서명 검증 (HS256)
+    ├─ token_blacklist 조회 (로그아웃 여부)
+    └─ SecurityContext 설정
     │
-    ├─ 1. Lint (ESLint + Checkstyle)
-    ├─ 2. Unit Test (JUnit 5)
-    ├─ 3. SonarCloud 분석 (+ JaCoCo 커버리지)
-    ├─ 4. Snyk 의존성 스캔
+    ▼
+AuthorizationFilter
+    ├─ /admin/** → ADMIN only
+    ├─ 성적 수정 → teacher_assignments 권한 체크
+    ├─ 학생부 수정 → homeroom_teacher_id 확인
+    ├─ 상담/피드백 수정 → 작성자 확인
+    └─ 학생/학부모 조회 → 본인/자녀 확인
     │
-    │ ── PR 머지 후 (develop branch) ──
-    │
-    ├─ 5. Docker Build (frontend + backend)
-    ├─ 6. Docker Push → AWS ECR
-    └─ 7. aws ecs update-service → ECS Fargate 롤링 배포
+    ▼
+AES-256-GCM 복호화
+    └─ counselings.content, next_plan
+    └─ users.email, phone (응답 시)
 ```
 
-**GitHub Actions 직접 배포 선택 근거:**
-- Argo CD는 Kubernetes 전용. ECS 환경에서는 불필요.
-- 이미지 빌드 → ECR push → `aws ecs update-service`로 하나의 워크플로우 파일에 완결.
-- GitOps 원칙은 ECS Task Definition을 Git에서 관리하는 것으로 충족.
+---
 
-## 보안 아키텍처 (3단계)
+## 데이터 흐름 예시
+
+### 성적 입력
 
 ```
-빌드 타임                 런타임                    운영
-┌─────────────┐    ┌─────────────┐    ┌──────────────────┐
-│   Snyk      │    │ Burp Suite  │    │ Prometheus       │
-│             │    │             │    │ + Grafana        │
-│ - 의존성     │    │ - DAST 스캔  │    │ - 메트릭 수집     │
-│   취약점     │    │ - XSS/SQLI  │    │ - 대시보드        │
-│   스캔      │    │   테스트     │    │                  │
-│             │    │ - 인증 우회  │    │        ↓         │
-│ (CI 단계)   │    │   테스트     │    │ Grafana Alerting │
-│             │    │             │    │ → Gmail SMTP     │
-│             │    │             │    │ (5xx/Heap/HikariCP)│
-└─────────────┘    └─────────────┘    └──────────────────┘
+교사 → [성적 입력 폼] POST /api/v1/scores
+    → teacher_assignments 권한 확인
+    → Score 저장 + grade_letter/rank 계산
+    → audit_logs 기록
+    → NotificationEvent 발행
+    → Solapi SMS 발송 ("성적이 업데이트되었습니다")
+    → WebSocket push (브라우저 실시간 알림)
 ```
 
-**모니터링 전략 (설계 판단 기록):**
-- **Prometheus + Grafana:** ECS Fargate 단일 Task로 배포. Spring Boot Actuator + Micrometer 네이티브 지원. 비용 ~$0.33/일.
-- **Grafana Alerting → Gmail SMTP:** Grafana 내장 알림으로 PagerDuty 대체. 별도 SaaS 계정/연동 불필요. 1인 운영 학교 프로젝트 규모에서 온콜 로테이션·에스컬레이션은 과잉.
-- **Dynatrace 스킵:** Prometheus+Grafana와 기능 중복. 모놀리스 구조에서 분산 트레이싱 불필요. "써봤다"는 이유로 도구를 추가하는 건 설계적 근거 없음.
+### 계정 활성화
 
-## 개인정보 암호화
+```
+학생/학부모 → [활성화 화면] 전화번호 입력
+    → phone_hash 조회 (사전 등록 여부 확인)
+    → Solapi SMS OTP 발송 (5분 만료)
+    → OTP + 이메일 + 비밀번호 제출
+    → bcrypt 해시 저장, 계정 활성화
+```
 
-| 구간 | 방법 |
-|------|------|
-| 전송 중 (in-transit) | HTTPS/TLS. ALB에서 TLS 터미네이션. AWS ACM 무료 인증서. |
-| 저장 시 (at-rest) DB 레벨 | AWS RDS 스토리지 암호화 옵션 활성화. |
-| 저장 시 (at-rest) 앱 레벨 | 민감 필드(연락처 등) AES-256 암호화. JPA `@Convert` + AttributeConverter 자동 처리. |
-| 비밀번호 | BCrypt 해싱 (Spring Security 기본 제공). |
+---
 
-## 백업 및 복구
+## 기술 스택
 
-- **PostgreSQL**: AWS RDS 자동 백업(매일 스냅샷 + point-in-time recovery). 자체 운영 시 `pg_dump` 크론잡 → S3 저장.
-- **Redis**: 캐시/블랙리스트 용도이므로 백업 필수 아님. 유실 시 자동 재생성되는 구조로 설계.
-- **인프라**: ECS Task Definition + 코드 모두 Git에 있으므로 재배포 가능.
-
-## 사용자 권한 매트릭스
-
-| 기능 | 교사 (TEACHER) | 학생 (STUDENT) | 학부모 (PARENT) |
-|------|:-:|:-:|:-:|
-| 성적 입력/수정 | O | X | X |
-| 성적 조회 (본인/담당) | O | O (본인) | O (자녀) |
-| 학생부 조회/수정 | O | X | X |
-| 피드백 작성 | O | X | X |
-| 피드백 조회 | O | O (본인) | O (자녀) |
-| 상담 내역 기록 | O | X | X |
-| 상담 내역 조회 | O (교사 간 공유) | X | X |
-| 보고서 생성/다운로드 | O | X | X |
-| 알림 수신 | O | O | O |
+| 계층 | 기술 | 버전 |
+|------|------|------|
+| Frontend | React, TypeScript, Vite | 19, 5, 8 |
+| Backend | Spring Boot, Spring Security, JPA | 3.5 |
+| Database | PostgreSQL | 16 |
+| 인증 | JWT (JJWT), bcrypt, AES-256-GCM | 0.12.5 |
+| SMS | Solapi | REST API |
+| 실시간 | WebSocket (STOMP) | — |
+| 컨테이너 | Docker, Docker Compose | — |
+| CI/CD | GitHub Actions, ECR | — |
+| 모니터링 | Prometheus, Grafana | — |
+| 테스트 | JUnit 5, JaCoCo, SonarCloud | — |
