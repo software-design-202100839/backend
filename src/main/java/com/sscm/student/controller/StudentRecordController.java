@@ -75,15 +75,17 @@ public class StudentRecordController {
         return ResponseEntity.ok(ApiResponse.success(studentRecordService.getRecord(recordId)));
     }
 
-    @Operation(summary = "학생별 학기 학생부 조회", description = "카테고리 필터 가능")
+    @Operation(summary = "학생별 학기 학생부 조회", description = "카테고리 필터 가능. 학생은 공개 항목만, 학부모는 학부모 공개 항목만 조회됨")
     @GetMapping("/{studentId}/records")
     public ResponseEntity<ApiResponse<List<StudentRecordResponse>>> getStudentRecords(
             @PathVariable Long studentId,
             @RequestParam Integer year,
             @RequestParam Integer semester,
-            @RequestParam(required = false) RecordCategory category) {
+            @RequestParam(required = false) RecordCategory category,
+            Authentication authentication) {
+        Long callerId = (Long) authentication.getPrincipal();
         List<StudentRecordResponse> records = studentRecordService.getStudentRecords(
-                studentId, year, semester, category);
+                studentId, year, semester, category, callerId);
         return ResponseEntity.ok(ApiResponse.success(records));
     }
 }

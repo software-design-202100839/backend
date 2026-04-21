@@ -1,7 +1,10 @@
 package com.sscm.student.service;
 
+import com.sscm.auth.entity.Role;
 import com.sscm.auth.entity.Student;
+import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
+import com.sscm.auth.repository.UserRepository;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.student.dto.*;
@@ -21,6 +24,7 @@ public class StudentRecordService {
 
     private final StudentRecordRepository studentRecordRepository;
     private final StudentRepository studentRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public StudentRecordResponse createRecord(StudentRecordRequest request, Long currentUserId) {
@@ -63,16 +67,33 @@ public class StudentRecordService {
     }
 
     public List<StudentRecordResponse> getStudentRecords(Long studentId, Integer year, Integer semester,
-                                                          RecordCategory category) {
+                                                          RecordCategory category, Long callerId) {
         studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
 
+        User caller = userRepository.findById(callerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        Role role = caller.getRole();
+
         List<StudentRecord> records;
-        if (category != null) {
-            records = studentRecordRepository.findByStudentIdAndYearAndSemesterAndCategory(
-                    studentId, year, semester, category);
+        if (role == Role.STUDENT) {
+            records = category != null
+                    ? studentRecordRepository.findByStudentIdAndYearAndSemesterAndCategoryAndIsVisibleToStudent(
+                            studentId, year, semester, category, true)
+                    : studentRecordRepository.findByStudentIdAndYearAndSemesterAndIsVisibleToStudent(
+                            studentId, year, semester, true);
+        } else if (role == Role.PARENT) {
+            records = category != null
+                    ? studentRecordRepository.findByStudentIdAndYearAndSemesterAndCategoryAndIsVisibleToParent(
+                            studentId, year, semester, category, true)
+                    : studentRecordRepository.findByStudentIdAndYearAndSemesterAndIsVisibleToParent(
+                            studentId, year, semester, true);
         } else {
-            records = studentRecordRepository.findByStudentIdAndYearAndSemester(studentId, year, semester);
+            // TEACHER, ADMIN: 전체 조회
+            records = category != null
+                    ? studentRecordRepository.findByStudentIdAndYearAndSemesterAndCategory(
+                            studentId, year, semester, category)
+                    : studentRecordRepository.findByStudentIdAndYearAndSemester(studentId, year, semester);
         }
 
         return records.stream().map(StudentRecordResponse::from).toList();

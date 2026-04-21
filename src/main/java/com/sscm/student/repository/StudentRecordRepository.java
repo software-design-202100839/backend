@@ -13,5 +13,17 @@ public interface StudentRecordRepository extends JpaRepository<StudentRecord, Lo
     List<StudentRecord> findByStudentIdAndYearAndSemesterAndCategory(
             Long studentId, Integer year, Integer semester, RecordCategory category);
 
+    List<StudentRecord> findByStudentIdAndYearAndSemesterAndIsVisibleToStudent(
+            Long studentId, Integer year, Integer semester, Boolean isVisibleToStudent);
+
+    List<StudentRecord> findByStudentIdAndYearAndSemesterAndCategoryAndIsVisibleToStudent(
+            Long studentId, Integer year, Integer semester, RecordCategory category, Boolean isVisibleToStudent);
+
+    List<StudentRecord> findByStudentIdAndYearAndSemesterAndIsVisibleToParent(
+            Long studentId, Integer year, Integer semester, Boolean isVisibleToParent);
+
+    List<StudentRecord> findByStudentIdAndYearAndSemesterAndCategoryAndIsVisibleToParent(
+            Long studentId, Integer year, Integer semester, RecordCategory category, Boolean isVisibleToParent);
+
     List<StudentRecord> findByStudentIdOrderByYearDescSemesterDesc(Long studentId);
 }
