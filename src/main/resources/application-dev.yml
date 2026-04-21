@@ -22,6 +22,11 @@ management:
       exposure:
         include: health,prometheus,info,metrics
 
+dev:
+  seed:
+    admin:
+      password: ${DEV_SEED_ADMIN_PASSWORD}
+
 logging:
   level:
     com.sscm: DEBUG

@@ -15,6 +15,7 @@ jobs:
       DB_PASSWORD: sscm1234
       ENCRYPTION_KEY: c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=
       JWT_SECRET: sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+      DEV_SEED_ADMIN_PASSWORD: ${{ secrets.DEV_SEED_ADMIN_PASSWORD }}
 
     services:
       postgres:

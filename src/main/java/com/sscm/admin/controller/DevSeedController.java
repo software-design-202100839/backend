@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,7 +21,8 @@ import java.time.LocalDateTime;
 
 /**
  * dev 환경 전용 — 초기 ADMIN 계정 생성.
- * POST /api/v1/dev/seed/admin → admin@sscm.dev / Admin1234!
+ * POST /api/v1/dev/seed/admin → admin@sscm.dev
+ * 비밀번호는 DEV_SEED_ADMIN_PASSWORD 환경변수로 주입.
  * 프로덕션에서는 활성화되지 않음 (@Profile("dev")).
  */
 @Tag(name = "Dev", description = "개발 환경 전용 (프로덕션 비활성화)")
@@ -29,18 +31,19 @@ import java.time.LocalDateTime;
 @RequestMapping("/api/v1/dev")
 @RequiredArgsConstructor
 @Profile("dev")
-@SuppressWarnings("java:S2068") // dev-only seed credential, not a production secret
 public class DevSeedController {
 
-    private static final String ADMIN_EMAIL    = "admin@sscm.dev";
-    private static final String ADMIN_PASSWORD = "Admin1234!";
-    private static final String ADMIN_PHONE    = "010-0000-0000";
-    private static final String ADMIN_NAME     = "관리자";
+    private static final String ADMIN_EMAIL = "admin@sscm.dev";
+    private static final String ADMIN_PHONE = "010-0000-0000";
+    private static final String ADMIN_NAME  = "관리자";
+
+    @Value("${dev.seed.admin.password}")
+    private String adminPassword;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Operation(summary = "[DEV] ADMIN 계정 생성 — admin@sscm.dev / Admin1234!")
+    @Operation(summary = "[DEV] ADMIN 계정 생성 — admin@sscm.dev")
     @PostMapping("/seed/admin")
     public ResponseEntity<ApiResponse<SeedResult>> seedAdmin() {
         String phoneHash = EncryptionUtil.sha256(ADMIN_PHONE);
@@ -56,7 +59,7 @@ public class DevSeedController {
                 .emailHash(emailHash)
                 .phone(ADMIN_PHONE)
                 .phoneHash(phoneHash)
-                .passwordHash(passwordEncoder.encode(ADMIN_PASSWORD))
+                .passwordHash(passwordEncoder.encode(adminPassword))
                 .role(Role.ADMIN)
                 .isActive(true)
                 .isActivated(true)
@@ -66,8 +69,7 @@ public class DevSeedController {
         userRepository.save(admin);
 
         log.info("[DEV SEED] ADMIN 계정 생성 완료: {}", ADMIN_EMAIL);
-        return ResponseEntity.ok(ApiResponse.success(
-                new SeedResult("ADMIN 생성 완료", ADMIN_EMAIL)));
+        return ResponseEntity.ok(ApiResponse.success(new SeedResult("ADMIN 생성 완료", ADMIN_EMAIL)));
     }
 
     public record SeedResult(String message, String credential) {}
