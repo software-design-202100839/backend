@@ -56,12 +56,8 @@ jobs:
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Run tests + JaCoCo
-        run: ./gradlew test jacocoTestReport --no-daemon
+      - name: Test + JaCoCo + SonarCloud
+        run: ./gradlew jacocoTestReport sonar --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: dev
-
-      - name: SonarCloud analysis
-        run: ./gradlew sonar --no-daemon
-        env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

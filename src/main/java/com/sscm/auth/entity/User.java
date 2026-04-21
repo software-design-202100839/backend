@@ -4,6 +4,7 @@ import com.sscm.common.crypto.EncryptedStringConverter;
 import com.sscm.common.crypto.EncryptionUtil;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -87,7 +88,7 @@ public class User {
     public void recordLoginFailure() {
         this.failedLoginCount++;
         if (this.failedLoginCount >= 5) {
-            this.loginLockedUntil = Instant.now().plusSeconds(30 * 60);
+            this.loginLockedUntil = Instant.now().plus(Duration.ofMinutes(30));
         }
         this.updatedAt = LocalDateTime.now();
     }

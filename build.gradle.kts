@@ -77,6 +77,10 @@ tasks.jacocoTestCoverageVerification {
 	}
 }
 
+tasks.sonarqube {
+	dependsOn(tasks.jacocoTestReport)
+}
+
 sonarqube {
 	properties {
 		property("sonar.host.url", "https://sonarcloud.io")
