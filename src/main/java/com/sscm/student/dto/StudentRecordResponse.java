@@ -19,6 +19,9 @@ public class StudentRecordResponse {
     private Integer semester;
     private RecordCategory category;
     private Map<String, Object> content;
+    private Boolean isVisibleToStudent;
+    private Boolean isVisibleToParent;
+    private String reviewStatus;  // DRAFT, REVIEWED, APPROVED
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -31,6 +34,9 @@ public class StudentRecordResponse {
                 .semester(record.getSemester())
                 .category(record.getCategory())
                 .content(record.getContent())
+                .isVisibleToStudent(record.getIsVisibleToStudent())
+                .isVisibleToParent(record.getIsVisibleToParent())
+                .reviewStatus(record.getReviewStatus() != null ? record.getReviewStatus().name() : null)
                 .createdAt(record.getCreatedAt())
                 .updatedAt(record.getUpdatedAt())
                 .build();
