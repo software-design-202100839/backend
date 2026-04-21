@@ -1,18 +1,18 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/sscm
-    username: sscm
-    password: sscm1234  # NOSONAR — dev/local only, not a production credential
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:sscm}
+    username: ${DB_USERNAME:sscm}
+    password: ${DB_PASSWORD:sscm1234}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     show-sql: true
 
 encryption:
-  key: c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=
+  key: ${ENCRYPTION_KEY:c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=}
 
 jwt:
-  secret: sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+  secret: ${JWT_SECRET:sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
   access-token-expiration: 1800000
   refresh-token-expiration: 604800000
 
