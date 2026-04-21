@@ -27,9 +27,9 @@ repositories {
 }
 
 dependencies {
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-data-redis")
-	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -79,7 +79,9 @@ tasks.jacocoTestCoverageVerification {
 
 sonarqube {
 	properties {
-		property("sonar.projectKey", "sscm-backend")
+		property("sonar.host.url", "https://sonarcloud.io")
+		property("sonar.organization", "software-design-202100839")
+		property("sonar.projectKey", "software-design-202100839_backend")
 		property("sonar.projectName", "SSCM Backend")
 		property("sonar.sources", "src/main/java")
 		property("sonar.tests", "src/test/java")

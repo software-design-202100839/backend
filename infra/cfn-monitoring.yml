@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  SSCM Monitoring Stack — Prometheus + Grafana on ECS Fargate
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets (2+)
+
+  PrometheusImage:
+    Type: String
+    Description: "Prometheus ECR image URI"
+
+  GrafanaImage:
+    Type: String
+    Description: "Grafana ECR image URI"
+
+  GrafanaAdminPassword:
+    Type: String
+    NoEcho: true
+    Default: admin
+    Description: Grafana admin password
+
+  GmailAppPassword:
+    Type: String
+    NoEcho: true
+    Description: Gmail app password for SMTP
+
+Resources:
+
+  # Log Group
+  MonitoringLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/sscm-monitoring
+      RetentionInDays: 14
+
+  # Security Group
+  MonitoringSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Monitoring ECS Service - Grafana port 3000
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !ImportValue sscm-alb-sg-id
+          Description: ALB to Grafana
+      Tags:
+        - Key: Name
+          Value: sscm-monitoring-sg
+
+  # Target Group for Grafana
+  GrafanaTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: sscm-grafana-tg
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /grafana/api/health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Project
+          Value: sscm
+
+  # ALB Listener Rule — /grafana/* -> Grafana
+  GrafanaListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !ImportValue sscm-http-listener-arn
+      Priority: 5
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/grafana/*"
+            - "/grafana"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref GrafanaTargetGroup
+
+  # Task Definition
+  MonitoringTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: sscm-monitoring
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !ImportValue sscm-ecs-execution-role-arn
+      ContainerDefinitions:
+        - Name: prometheus
+          Image: !Ref PrometheusImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: 9090
+              Protocol: tcp
+          Command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.retention.time=3d'
+            - '--storage.tsdb.retention.size=1GB'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref MonitoringLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: prometheus
+
+        - Name: grafana
+          Image: !Ref GrafanaImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              Protocol: tcp
+          Environment:
+            - Name: GF_SECURITY_ADMIN_USER
+              Value: admin
+            - Name: GF_SECURITY_ADMIN_PASSWORD
+              Value: !Ref GrafanaAdminPassword
+            - Name: GF_SERVER_ROOT_URL
+              Value: "%(protocol)s://%(domain)s/grafana/"
+            - Name: GF_SERVER_SERVE_FROM_SUB_PATH
+              Value: "true"
+            - Name: GF_USERS_ALLOW_SIGN_UP
+              Value: "false"
+            - Name: GF_SMTP_ENABLED
+              Value: "true"
+            - Name: GF_SMTP_HOST
+              Value: "smtp.gmail.com:587"
+            - Name: GF_SMTP_USER
+              Value: "seungheelee1122@gmail.com"
+            - Name: GF_SMTP_PASSWORD
+              Value: !Ref GmailAppPassword
+            - Name: GF_SMTP_FROM_ADDRESS
+              Value: "seungheelee1122@gmail.com"
+            - Name: GF_SMTP_FROM_NAME
+              Value: "SSCM Monitoring"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref MonitoringLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: grafana
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:3000/grafana/api/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+
+  # ECS Service
+  MonitoringService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: sscm-monitoring
+      Cluster: !ImportValue sscm-cluster-name
+      TaskDefinition: !Ref MonitoringTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 60
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref MonitoringSecurityGroup
+          Subnets: !Ref SubnetIds
+      LoadBalancers:
+        - ContainerName: grafana
+          ContainerPort: 3000
+          TargetGroupArn: !Ref GrafanaTargetGroup
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      Tags:
+        - Key: Project
+          Value: sscm
+
+Outputs:
+  GrafanaUrl:
+    Value: !Sub
+      - "http://${AlbDns}/grafana/"
+      - AlbDns: !ImportValue sscm-alb-dns
+    Description: Grafana dashboard URL

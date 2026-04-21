@@ -1,0 +1,51 @@
+name: DAST (OWASP ZAP)
+
+# CD 완료 후 자동 실행 + 수동 실행 지원
+on:
+  workflow_run:
+    workflows: ["Backend CD"]
+    branches: [develop]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "스캔 대상 URL (기본: EC2)"
+        required: false
+        default: ""
+
+jobs:
+  zap-scan:
+    # CD가 성공했을 때만 자동 실행 (수동 실행은 항상 허용)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set target URL
+        id: target
+        run: |
+          if [ -n "${{ github.event.inputs.target }}" ]; then
+            echo "url=${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://${{ secrets.EC2_HOST }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          rules_file_name: ""
+          cmd_options: "-a"
+          fail_action: false   # 취약점 발견돼도 워크플로우 fail 처리 안 함 (리포트 생성 우선)
+          artifact_name: zap-report
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: |
+            report_html.html
+            report_json.json
+          retention-days: 30

@@ -63,6 +63,11 @@ public class Score {
     @Column(name = "updated_by")
     private Long updatedBy;
 
+    @Version
+    @Column(nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     public void updateScore(BigDecimal newScore, String gradeLetter, Long updatedBy) {
         this.score = newScore;
         this.gradeLetter = gradeLetter;

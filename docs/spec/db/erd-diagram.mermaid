@@ -1,0 +1,130 @@
+erDiagram
+    users {
+        bigserial id PK
+        varchar email UK "★암호화 대상"
+        varchar password_hash
+        varchar name "★암호화 대상"
+        varchar phone "★암호화 대상"
+        varchar role "TEACHER/STUDENT/PARENT"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "Soft Delete"
+    }
+
+    teachers {
+        bigserial id PK
+        bigint user_id FK, UK
+        varchar department
+        integer homeroom_grade
+        integer homeroom_class
+    }
+
+    students {
+        bigserial id PK
+        bigint user_id FK, UK
+        integer grade "학년 1~3"
+        integer class_num "반"
+        integer student_num "번호"
+        integer admission_year
+    }
+
+    parents {
+        bigserial id PK
+        bigint user_id FK, UK
+    }
+
+    parent_student {
+        bigint parent_id PK, FK
+        bigint student_id PK, FK
+        varchar relationship "FATHER/MOTHER/GUARDIAN"
+    }
+
+    subjects {
+        bigserial id PK
+        varchar name
+        varchar code UK
+        text description
+        timestamp created_at
+    }
+
+    scores {
+        bigserial id PK
+        bigint student_id FK
+        bigint subject_id FK
+        bigint teacher_id FK
+        integer year
+        integer semester "1 or 2"
+        decimal score "0~100"
+        varchar grade_letter "자동계산"
+        integer rank "자동계산"
+        timestamp created_at
+        timestamp updated_at
+        bigint created_by FK
+        bigint updated_by FK
+    }
+
+    student_records {
+        bigserial id PK
+        bigint student_id FK
+        integer year
+        integer semester
+        varchar category "ATTENDANCE/SPECIAL_NOTE/..."
+        jsonb content "유연한 데이터"
+        timestamp created_at
+        timestamp updated_at
+        bigint created_by FK
+        bigint updated_by FK
+    }
+
+    feedbacks {
+        bigserial id PK
+        bigint student_id FK
+        bigint teacher_id FK
+        varchar category "ACADEMIC/BEHAVIOR/..."
+        text content
+        boolean is_visible_to_student
+        boolean is_visible_to_parent
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    counselings {
+        bigserial id PK
+        bigint student_id FK
+        bigint teacher_id FK
+        date counsel_date
+        varchar category "ACADEMIC/CAREER/..."
+        text content
+        text next_plan
+        date next_counsel_date
+        boolean is_shared
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        bigserial id PK
+        bigint recipient_id FK
+        varchar type "SCORE_UPDATE/FEEDBACK_NEW/..."
+        varchar title
+        text message
+        varchar reference_type
+        bigint reference_id
+        boolean is_read
+        timestamp created_at
+    }
+
+    users ||--o| teachers : "is a"
+    users ||--o| students : "is a"
+    users ||--o| parents : "is a"
+    parents }|--|{ students : "parent_student"
+    students ||--o{ scores : "has"
+    subjects ||--o{ scores : "has"
+    teachers ||--o{ scores : "inputs"
+    students ||--o{ student_records : "has"
+    students ||--o{ feedbacks : "receives"
+    teachers ||--o{ feedbacks : "writes"
+    students ||--o{ counselings : "has"
+    teachers ||--o{ counselings : "conducts"
+    users ||--o{ notifications : "receives"

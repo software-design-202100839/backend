@@ -20,6 +20,11 @@ spring:
 server:
   port: 8080
 
+management:
+  metrics:
+    tags:
+      application: sscm-backend
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

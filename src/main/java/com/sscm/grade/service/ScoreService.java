@@ -6,8 +6,12 @@ import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.repository.StudentEnrollmentRepository;
+import com.sscm.common.repository.TeacherAssignmentRepository;
+import com.sscm.common.service.AuditLogService;
 import com.sscm.grade.dto.*;
 import com.sscm.grade.entity.Score;
 import com.sscm.grade.entity.Subject;
@@ -31,6 +35,9 @@ public class ScoreService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final TeacherAssignmentRepository teacherAssignmentRepository;
+    private final StudentEnrollmentRepository studentEnrollmentRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public ScoreResponse createScore(ScoreRequest request, Long currentUserId) {
@@ -39,6 +46,17 @@ public class ScoreService {
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SUBJECT_NOT_FOUND));
         Teacher teacher = findTeacherByUserId(currentUserId);
+
+        // 담당 교사 검증: 해당 학년도·반·과목에 배정된 교사만 성적 입력 가능
+        StudentEnrollment enrollment = studentEnrollmentRepository
+                .findByStudentAndAcademicYear(student, request.getYear())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        boolean isAssigned = teacherAssignmentRepository
+                .existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
+                        teacher, enrollment.getClassRoom(), subject, request.getYear());
+        if (!isAssigned) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
 
         scoreRepository.findByStudentIdAndSubjectIdAndYearAndSemester(
                 request.getStudentId(), request.getSubjectId(),
@@ -62,6 +80,9 @@ public class ScoreService {
         Score saved = scoreRepository.save(score);
         updateRanks(subject.getId(), request.getYear(), request.getSemester());
 
+        auditLogService.record("scores", saved.getId(), "score",
+                null, request.getScore().toPlainString(), currentUserId);
+
         return ScoreResponse.from(saved);
     }
 
@@ -69,11 +90,27 @@ public class ScoreService {
     public ScoreResponse updateScore(Long scoreId, ScoreUpdateRequest request, Long currentUserId) {
         Score score = scoreRepository.findById(scoreId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SCORE_NOT_FOUND));
+        Teacher teacher = findTeacherByUserId(currentUserId);
 
+        // 담당 교사 검증
+        StudentEnrollment enrollment = studentEnrollmentRepository
+                .findByStudentAndAcademicYear(score.getStudent(), score.getYear())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        boolean isAssigned = teacherAssignmentRepository
+                .existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
+                        teacher, enrollment.getClassRoom(), score.getSubject(), score.getYear());
+        if (!isAssigned) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        String oldScore = score.getScore().toPlainString();
         String gradeLetter = Score.calculateGradeLetter(request.getScore());
         score.updateScore(request.getScore(), gradeLetter, currentUserId);
 
         updateRanks(score.getSubject().getId(), score.getYear(), score.getSemester());
+
+        auditLogService.record("scores", scoreId, "score",
+                oldScore, request.getScore().toPlainString(), currentUserId);
 
         return ScoreResponse.from(score);
     }
@@ -139,6 +176,16 @@ public class ScoreService {
                 subjectId, year, semester);
         for (int i = 0; i < scores.size(); i++) {
             scores.get(i).updateRank(i + 1);
+        }
+    }
+
+    public void checkStudentAccess(Long userId, String role, Long studentId) {
+        if ("ROLE_STUDENT".equals(role)) {
+            Student student = studentRepository.findByUser_Id(userId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+            if (!student.getId().equals(studentId)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
         }
     }
 

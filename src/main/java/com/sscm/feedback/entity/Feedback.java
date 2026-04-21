@@ -49,6 +49,11 @@ public class Feedback {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Version
+    @Column(nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     public void update(FeedbackCategory category, String content,
                        Boolean isVisibleToStudent, Boolean isVisibleToParent) {
         this.category = category;

@@ -2,6 +2,7 @@ package com.sscm.counsel.entity;
 
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
+import com.sscm.common.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -34,18 +35,16 @@ public class Counseling {
     @Column(nullable = false, length = 30)
     private CounselCategory category;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "next_plan", columnDefinition = "TEXT")
     private String nextPlan;
 
     @Column(name = "next_counsel_date")
     private LocalDate nextCounselDate;
-
-    @Column(name = "is_shared", nullable = false)
-    @Builder.Default
-    private Boolean isShared = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
@@ -55,14 +54,18 @@ public class Counseling {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Version
+    @Column(nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     public void update(LocalDate counselDate, CounselCategory category, String content,
-                       String nextPlan, LocalDate nextCounselDate, Boolean isShared) {
+                       String nextPlan, LocalDate nextCounselDate) {
         this.counselDate = counselDate;
         this.category = category;
         this.content = content;
         this.nextPlan = nextPlan;
         this.nextCounselDate = nextCounselDate;
-        this.isShared = isShared;
         this.updatedAt = LocalDateTime.now();
     }
 }

@@ -4,13 +4,11 @@ spring:
     username: sscm
     password: sscm1234
 
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
   jpa:
     show-sql: false
+
+encryption:
+  key: c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=
 
 jwt:
   secret: ci-test-secret-key-that-is-long-enough-for-hmac-sha256
