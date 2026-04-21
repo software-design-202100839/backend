@@ -5,6 +5,7 @@ on:
     workflows: ["CI (Test + SonarCloud)"]
     branches: [develop]
     types: [completed]
+  workflow_dispatch:   # 수동 실행 지원
 
 env:
   AWS_REGION: ap-northeast-2
@@ -13,8 +14,10 @@ env:
 jobs:
   # ── 1단계: Docker 이미지 빌드 → ECR 푸시 ────────────────────────────────────
   build-and-push:
-    # CI가 성공했을 때만 실행
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # CI 성공 시 자동 실행, 또는 수동(workflow_dispatch) 실행
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.build.outputs.image-tag }}
