@@ -76,7 +76,7 @@ public class User {
         if (this.email != null) {
             this.emailHash = EncryptionUtil.sha256(this.email);
         }
-        if (this.phone != null && this.phoneHash == null) {
+        if (this.phone != null) {
             this.phoneHash = EncryptionUtil.sha256(this.phone);
         }
     }
