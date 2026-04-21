@@ -1,13 +1,17 @@
 package com.sscm.counsel.service;
 
+import com.sscm.auth.entity.Role;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
 import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.repository.StudentEnrollmentRepository;
+import com.sscm.common.repository.TeacherAssignmentRepository;
 import com.sscm.counsel.dto.CounselingRequest;
 import com.sscm.counsel.dto.CounselingResponse;
 import com.sscm.counsel.dto.CounselingUpdateRequest;
@@ -30,6 +34,8 @@ public class CounselingService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final TeacherAssignmentRepository teacherAssignmentRepository;
+    private final StudentEnrollmentRepository studentEnrollmentRepository;
 
     @Transactional
     public CounselingResponse createCounseling(CounselingRequest request, Long currentUserId) {
@@ -57,10 +63,7 @@ public class CounselingService {
         Counseling counseling = counselingRepository.findByIdWithDetails(counselingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUNSELING_NOT_FOUND));
 
-        Teacher teacher = findTeacherByUserId(currentUserId);
-        if (!counseling.getTeacher().getId().equals(teacher.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
-        }
+        checkWriteAccess(counseling, currentUserId);
 
         counseling.update(
                 request.getCounselDate(),
@@ -71,6 +74,16 @@ public class CounselingService {
         );
 
         return CounselingResponse.from(counseling);
+    }
+
+    @Transactional
+    public void deleteCounseling(Long counselingId, Long currentUserId) {
+        Counseling counseling = counselingRepository.findByIdWithDetails(counselingId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUNSELING_NOT_FOUND));
+
+        checkWriteAccess(counseling, currentUserId);
+
+        counselingRepository.delete(counseling);
     }
 
     public CounselingResponse getCounseling(Long counselingId) {
@@ -106,6 +119,45 @@ public class CounselingService {
 
         return counselingRepository.findByStudentIdAndDateRangeWithDetails(studentId, startDate, endDate)
                 .stream().map(CounselingResponse::from).toList();
+    }
+
+    /**
+     * 수정/삭제 권한 체크.
+     * - ADMIN: 모든 연도 허용
+     * - TEACHER + 당해 연도: 작성자 본인만
+     * - TEACHER + 과거 연도: 해당 연도 teacher_assignments에 배정된 교사만
+     */
+    private void checkWriteAccess(Counseling counseling, Long currentUserId) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return;
+        }
+
+        Teacher teacher = teacherRepository.findByUser(currentUser)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
+
+        int counselYear = counseling.getCounselDate().getYear();
+        int currentYear = LocalDate.now().getYear();
+
+        if (counselYear == currentYear) {
+            // 당해 연도: 작성자 본인만
+            if (!counseling.getTeacher().getId().equals(teacher.getId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+        } else {
+            // 과거 연도: 해당 연도 담당 교사(teacher_assignments 기준)
+            StudentEnrollment enrollment = studentEnrollmentRepository
+                    .findByStudentAndAcademicYear(counseling.getStudent(), counselYear)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            boolean isAssigned = teacherAssignmentRepository
+                    .existsByTeacherAndClassRoomAndAcademicYear(
+                            teacher, enrollment.getClassRoom(), counselYear);
+            if (!isAssigned) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+        }
     }
 
     private Teacher findTeacherByUserId(Long userId) {

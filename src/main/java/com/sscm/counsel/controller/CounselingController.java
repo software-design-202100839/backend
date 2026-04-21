@@ -39,9 +39,9 @@ public class CounselingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
-    @Operation(summary = "상담 내역 수정 — 작성자만 가능")
+    @Operation(summary = "상담 내역 수정 — 당해 연도: 작성자 본인, 과거 연도: 담당 교사, 관리자: 제한 없음")
     @PutMapping("/{counselingId}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CounselingResponse>> updateCounseling(
             @PathVariable Long counselingId,
             @Valid @RequestBody CounselingUpdateRequest request,
@@ -49,6 +49,17 @@ public class CounselingController {
         Long userId = (Long) authentication.getPrincipal();
         CounselingResponse response = counselingService.updateCounseling(counselingId, request, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "상담 내역 삭제 — 당해 연도: 작성자 본인, 과거 연도: 담당 교사, 관리자: 제한 없음")
+    @DeleteMapping("/{counselingId}")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteCounseling(
+            @PathVariable Long counselingId,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        counselingService.deleteCounseling(counselingId, userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "상담 내역 단건 조회")

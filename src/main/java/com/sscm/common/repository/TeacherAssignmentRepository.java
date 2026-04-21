@@ -16,6 +16,9 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
     boolean existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
             Teacher teacher, ClassRoom classRoom, Subject subject, int academicYear);
 
+    boolean existsByTeacherAndClassRoomAndAcademicYear(
+            Teacher teacher, ClassRoom classRoom, int academicYear);
+
     @Query("SELECT a FROM TeacherAssignment a JOIN FETCH a.teacher t JOIN FETCH t.user JOIN FETCH a.classRoom JOIN FETCH a.subject WHERE a.academicYear = :year")
     List<TeacherAssignment> findByAcademicYearWithDetails(@Param("year") int year);
 
