@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sscm
     username: sscm
-    password: sscm1234
+    password: sscm1234  # NOSONAR — dev/local only, not a production credential
     driver-class-name: org.postgresql.Driver
 
   jpa:

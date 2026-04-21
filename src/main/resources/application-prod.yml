@@ -25,6 +25,12 @@ management:
   endpoint:
     health:
       show-details: never
+  metrics:
+    tags:
+      application: sscm-backend   # Grafana/Prometheus 라벨 필터용
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true  # p95 histogram_quantile 활성화
 
 logging:
   level:
