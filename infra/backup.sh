@@ -32,9 +32,8 @@ PGPASSWORD="${DB_PASSWORD}" pg_dump \
 
 echo "[$(date -Iseconds)] 덤프 완료: ${BACKUP_FILE}"
 
-# S3 업로드
-aws s3 cp "${BACKUP_FILE}" "s3://${S3_BUCKET}/${S3_KEY}" \
-  --server-side-encryption AES256
+# S3 업로드 (버킷 기본 암호화: AES256)
+aws s3 cp "${BACKUP_FILE}" "s3://${S3_BUCKET}/${S3_KEY}" --sse AES256
 
 echo "[$(date -Iseconds)] S3 업로드 완료: s3://${S3_BUCKET}/${S3_KEY}"
 
