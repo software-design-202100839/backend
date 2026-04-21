@@ -1,8 +1,10 @@
 name: Backend CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI (Test + SonarCloud)"]
     branches: [develop]
+    types: [completed]
 
 env:
   AWS_REGION: ap-northeast-2
@@ -11,6 +13,8 @@ env:
 jobs:
   # ── 1단계: Docker 이미지 빌드 → ECR 푸시 ────────────────────────────────────
   build-and-push:
+    # CI가 성공했을 때만 실행
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.build.outputs.image-tag }}
