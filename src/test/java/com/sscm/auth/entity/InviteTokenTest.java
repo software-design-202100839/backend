@@ -1,6 +1,5 @@
 package com.sscm.auth.entity;
 
-import com.sscm.auth.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +12,7 @@ class InviteTokenTest {
 
     private InviteToken buildToken(Instant expiresAt, Instant usedAt, int attemptCount) {
         return InviteToken.builder()
-                .phoneHash("hash123")
+                .phone("010-1234-5678")
                 .otpCode("123456")
                 .purpose(OtpPurpose.ACTIVATE)
                 .expiresAt(expiresAt)
@@ -113,22 +112,6 @@ class InviteTokenTest {
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
         assertThat(token.isExpired()).isFalse();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // User 엔티티 메서드
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("User.setPhoneHash — 전화번호 해시 갱신")
-    void user_setPhoneHash() {
-        User user = User.builder()
-                .name("테스트").role(Role.STUDENT).isActive(true).isActivated(false)
-                .phoneHash("old_hash").build();
-
-        user.setPhoneHash("new_hash");
-
-        assertThat(user.getPhoneHash()).isEqualTo("new_hash");
     }
 
     @Test

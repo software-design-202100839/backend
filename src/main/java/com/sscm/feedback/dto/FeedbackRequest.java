@@ -13,6 +13,12 @@ public class FeedbackRequest {
     @NotNull(message = "학생 ID는 필수입니다")
     private Long studentId;
 
+    @NotNull(message = "학년도는 필수입니다")
+    private Integer year;
+
+    @NotNull(message = "학기는 필수입니다")
+    private Integer semester;
+
     @NotNull(message = "카테고리는 필수입니다")
     private FeedbackCategory category;
 

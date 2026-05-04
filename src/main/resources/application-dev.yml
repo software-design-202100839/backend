@@ -8,9 +8,6 @@ spring:
   jpa:
     show-sql: true
 
-encryption:
-  key: ${ENCRYPTION_KEY:c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=}
-
 jwt:
   secret: ${JWT_SECRET:sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
   access-token-expiration: 1800000
@@ -25,7 +22,7 @@ management:
 dev:
   seed:
     admin:
-      password: ${DEV_SEED_ADMIN_PASSWORD}
+      password: ${DEV_SEED_ADMIN_PASSWORD:admin1234}
 
 logging:
   level:

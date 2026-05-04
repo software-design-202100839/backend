@@ -1,7 +1,5 @@
 package com.sscm.auth.entity;
 
-import com.sscm.common.crypto.EncryptedStringConverter;
-import com.sscm.common.crypto.EncryptionUtil;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Duration;
@@ -20,12 +18,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Convert(converter = EncryptedStringConverter.class)
-    @Column(columnDefinition = "TEXT")
+    @Column(unique = true)
     private String email;
-
-    @Column(name = "email_hash", unique = true, length = 64)
-    private String emailHash;
 
     @Column(name = "password_hash")
     private String passwordHash;
@@ -33,12 +27,8 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Convert(converter = EncryptedStringConverter.class)
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 20)
     private String phone;
-
-    @Column(name = "phone_hash", unique = true, length = 64)
-    private String phoneHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -70,17 +60,6 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @PrePersist
-    @PreUpdate
-    void computeHashes() {
-        if (this.email != null) {
-            this.emailHash = EncryptionUtil.sha256(this.email);
-        }
-        if (this.phone != null) {
-            this.phoneHash = EncryptionUtil.sha256(this.phone);
-        }
-    }
-
     public boolean isLocked() {
         return loginLockedUntil != null && Instant.now().isBefore(loginLockedUntil);
     }
@@ -109,9 +88,5 @@ public class User {
     public void resetPassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public void setPhoneHash(String phoneHash) {
-        this.phoneHash = phoneHash;
     }
 }

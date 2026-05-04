@@ -3,26 +3,29 @@ package com.sscm.grade.service;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
 import com.sscm.auth.entity.User;
+import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
-import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
-import com.sscm.common.repository.StudentEnrollmentRepository;
-import com.sscm.common.repository.TeacherAssignmentRepository;
 import com.sscm.common.service.AuditLogService;
 import com.sscm.grade.dto.*;
 import com.sscm.grade.entity.Score;
 import com.sscm.grade.entity.Subject;
 import com.sscm.grade.repository.ScoreRepository;
 import com.sscm.grade.repository.SubjectRepository;
+import com.sscm.notification.entity.NotificationReferenceType;
+import com.sscm.notification.entity.NotificationType;
+import com.sscm.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -35,9 +38,9 @@ public class ScoreService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
-    private final TeacherAssignmentRepository teacherAssignmentRepository;
-    private final StudentEnrollmentRepository studentEnrollmentRepository;
+    private final ParentStudentRepository parentStudentRepository;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ScoreResponse createScore(ScoreRequest request, Long currentUserId) {
@@ -46,17 +49,6 @@ public class ScoreService {
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SUBJECT_NOT_FOUND));
         Teacher teacher = findTeacherByUserId(currentUserId);
-
-        // 담당 교사 검증: 해당 학년도·반·과목에 배정된 교사만 성적 입력 가능
-        StudentEnrollment enrollment = studentEnrollmentRepository
-                .findByStudentAndAcademicYear(student, request.getYear())
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        boolean isAssigned = teacherAssignmentRepository
-                .existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                        teacher, enrollment.getClassRoom(), subject, request.getYear());
-        if (!isAssigned) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
-        }
 
         scoreRepository.findByStudentIdAndSubjectIdAndYearAndSemester(
                 request.getStudentId(), request.getSubjectId(),
@@ -83,6 +75,8 @@ public class ScoreService {
         auditLogService.record("scores", saved.getId(), "score",
                 null, request.getScore().toPlainString(), currentUserId);
 
+        publishScoreNotification(student, subject, saved);
+
         return ScoreResponse.from(saved);
     }
 
@@ -90,18 +84,6 @@ public class ScoreService {
     public ScoreResponse updateScore(Long scoreId, ScoreUpdateRequest request, Long currentUserId) {
         Score score = scoreRepository.findById(scoreId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SCORE_NOT_FOUND));
-        Teacher teacher = findTeacherByUserId(currentUserId);
-
-        // 담당 교사 검증
-        StudentEnrollment enrollment = studentEnrollmentRepository
-                .findByStudentAndAcademicYear(score.getStudent(), score.getYear())
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        boolean isAssigned = teacherAssignmentRepository
-                .existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                        teacher, enrollment.getClassRoom(), score.getSubject(), score.getYear());
-        if (!isAssigned) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
-        }
 
         String oldScore = score.getScore().toPlainString();
         String gradeLetter = Score.calculateGradeLetter(request.getScore());
@@ -111,6 +93,8 @@ public class ScoreService {
 
         auditLogService.record("scores", scoreId, "score",
                 oldScore, request.getScore().toPlainString(), currentUserId);
+
+        publishScoreNotification(score.getStudent(), score.getSubject(), score);
 
         return ScoreResponse.from(score);
     }
@@ -194,5 +178,27 @@ public class ScoreService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherRepository.findByUser(user)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
+    }
+
+    private void publishScoreNotification(Student student, Subject subject, Score score) {
+        List<Long> recipientIds = getStudentAndParentUserIds(student);
+        if (recipientIds.isEmpty()) return;
+
+        eventPublisher.publishEvent(NotificationEvent.builder()
+                .recipientIds(recipientIds)
+                .type(NotificationType.SCORE_UPDATE)
+                .title("성적 등록/변경")
+                .message(String.format("%s 과목 성적이 업데이트되었습니다.", subject.getName()))
+                .referenceType(NotificationReferenceType.SCORE)
+                .referenceId(score.getId())
+                .build());
+    }
+
+    private List<Long> getStudentAndParentUserIds(Student student) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(student.getUser().getId());
+        parentStudentRepository.findByStudent(student).forEach(ps ->
+                ids.add(ps.getParent().getUser().getId()));
+        return ids;
     }
 }

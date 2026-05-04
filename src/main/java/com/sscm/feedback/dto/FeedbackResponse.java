@@ -16,6 +16,8 @@ public class FeedbackResponse {
     private String studentName;
     private Long teacherId;
     private String teacherName;
+    private Integer year;
+    private Integer semester;
     private FeedbackCategory category;
     private String content;
     private Boolean isVisibleToStudent;
@@ -30,6 +32,8 @@ public class FeedbackResponse {
                 .studentName(feedback.getStudent().getUser().getName())
                 .teacherId(feedback.getTeacher().getId())
                 .teacherName(feedback.getTeacher().getUser().getName())
+                .year(feedback.getYear())
+                .semester(feedback.getSemester())
                 .category(feedback.getCategory())
                 .content(feedback.getContent())
                 .isVisibleToStudent(feedback.getIsVisibleToStudent())

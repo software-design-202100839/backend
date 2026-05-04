@@ -3,6 +3,7 @@ package com.sscm.feedback.service;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
 import com.sscm.auth.entity.User;
+import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
@@ -14,10 +15,15 @@ import com.sscm.feedback.dto.FeedbackUpdateRequest;
 import com.sscm.feedback.entity.Feedback;
 import com.sscm.feedback.entity.FeedbackCategory;
 import com.sscm.feedback.repository.FeedbackRepository;
+import com.sscm.notification.entity.NotificationReferenceType;
+import com.sscm.notification.entity.NotificationType;
+import com.sscm.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -29,6 +35,8 @@ public class FeedbackService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final ParentStudentRepository parentStudentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public FeedbackResponse createFeedback(FeedbackRequest request, Long currentUserId) {
@@ -39,6 +47,8 @@ public class FeedbackService {
         Feedback feedback = Feedback.builder()
                 .student(student)
                 .teacher(teacher)
+                .year(request.getYear())
+                .semester(request.getSemester())
                 .category(request.getCategory())
                 .content(request.getContent())
                 .isVisibleToStudent(request.getIsVisibleToStudent())
@@ -46,6 +56,9 @@ public class FeedbackService {
                 .build();
 
         Feedback saved = feedbackRepository.save(feedback);
+
+        publishFeedbackNotification(student, saved);
+
         return FeedbackResponse.from(saved);
     }
 
@@ -123,5 +136,26 @@ public class FeedbackService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherRepository.findByUser(user)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
+    }
+
+    private void publishFeedbackNotification(Student student, Feedback feedback) {
+        List<Long> recipientIds = new ArrayList<>();
+        if (Boolean.TRUE.equals(feedback.getIsVisibleToStudent())) {
+            recipientIds.add(student.getUser().getId());
+        }
+        if (Boolean.TRUE.equals(feedback.getIsVisibleToParent())) {
+            parentStudentRepository.findByStudent(student).forEach(ps ->
+                    recipientIds.add(ps.getParent().getUser().getId()));
+        }
+        if (recipientIds.isEmpty()) return;
+
+        eventPublisher.publishEvent(NotificationEvent.builder()
+                .recipientIds(recipientIds)
+                .type(NotificationType.FEEDBACK_NEW)
+                .title("새 피드백")
+                .message(String.format("%s 관련 새 피드백이 등록되었습니다.", feedback.getCategory().name()))
+                .referenceType(NotificationReferenceType.FEEDBACK)
+                .referenceId(feedback.getId())
+                .build());
     }
 }

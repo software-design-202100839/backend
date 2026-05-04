@@ -3,7 +3,6 @@ package com.sscm.admin.service;
 import com.sscm.admin.dto.*;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
-import com.sscm.common.crypto.EncryptionUtil;
 import com.sscm.common.entity.ClassRoom;
 import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.entity.TeacherAssignment;
@@ -47,15 +46,13 @@ public class AdminService {
 
     @Transactional
     public TeacherSummary registerTeacher(RegisterTeacherRequest req) {
-        String phoneHash = EncryptionUtil.sha256(req.getPhone());
-        if (userRepository.existsByPhoneHash(phoneHash)) {
+        if (userRepository.existsByPhone(req.getPhone())) {
             throw new BusinessException(ErrorCode.PHONE_DUPLICATE);
         }
 
         User user = User.builder()
                 .name(req.getName())
                 .phone(req.getPhone())
-                .phoneHash(phoneHash)
                 .role(Role.TEACHER)
                 .isActive(true)
                 .isActivated(false)
@@ -86,15 +83,13 @@ public class AdminService {
 
     @Transactional
     public StudentSummary registerStudent(RegisterStudentRequest req) {
-        String phoneHash = EncryptionUtil.sha256(req.getPhone());
-        if (userRepository.existsByPhoneHash(phoneHash)) {
+        if (userRepository.existsByPhone(req.getPhone())) {
             throw new BusinessException(ErrorCode.PHONE_DUPLICATE);
         }
 
         User user = User.builder()
                 .name(req.getName())
                 .phone(req.getPhone())
-                .phoneHash(phoneHash)
                 .role(Role.STUDENT)
                 .isActive(true)
                 .isActivated(false)
@@ -123,15 +118,13 @@ public class AdminService {
 
     @Transactional
     public ParentSummary registerParent(RegisterParentRequest req) {
-        String phoneHash = EncryptionUtil.sha256(req.getPhone());
-        if (userRepository.existsByPhoneHash(phoneHash)) {
+        if (userRepository.existsByPhone(req.getPhone())) {
             throw new BusinessException(ErrorCode.PHONE_DUPLICATE);
         }
 
         User user = User.builder()
                 .name(req.getName())
                 .phone(req.getPhone())
-                .phoneHash(phoneHash)
                 .role(Role.PARENT)
                 .isActive(true)
                 .isActivated(false)

@@ -182,7 +182,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("미등록 번호 → 항상 '인증번호가 발송되었습니다' 반환 (열거 공격 방지)")
         void unknownPhoneReturnsMessage() {
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.empty());
+            given(userRepository.findByPhone(any())).willReturn(Optional.empty());
 
             String result = authService.sendOtp(otpSendRequest("ACTIVATE"));
 
@@ -194,7 +194,7 @@ class AuthServiceTest {
         @DisplayName("미활성화 계정에 ACTIVATE 요청 → OTP 발송 + 메시지 반환")
         void activateOtpIssuedForUnactivated() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             given(otpService.issueOtp(any(), eq(OtpPurpose.ACTIVATE))).willReturn("123456");
 
             String result = authService.sendOtp(otpSendRequest("ACTIVATE"));
@@ -207,7 +207,7 @@ class AuthServiceTest {
         @DisplayName("이미 활성화된 계정에 ACTIVATE 요청 → ACCOUNT_ALREADY_ACTIVATED 예외")
         void activatedUserThrowsAlreadyActivated() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.sendOtp(otpSendRequest("ACTIVATE")))
                     .isInstanceOf(BusinessException.class)
@@ -219,7 +219,7 @@ class AuthServiceTest {
         @DisplayName("미활성화 계정에 PW_RESET 요청 → ACCOUNT_NOT_ACTIVATED 예외")
         void notActivatedUserThrowsForPwReset() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.sendOtp(otpSendRequest("PW_RESET")))
                     .isInstanceOf(BusinessException.class)
@@ -231,7 +231,7 @@ class AuthServiceTest {
         @DisplayName("활성화 계정에 PW_RESET 요청 → OTP 발송 + 메시지 반환")
         void pwResetOtpIssuedForActivated() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             given(otpService.issueOtp(any(), eq(OtpPurpose.PW_RESET))).willReturn("654321");
 
             String result = authService.sendOtp(otpSendRequest("PW_RESET"));
@@ -252,9 +252,9 @@ class AuthServiceTest {
         @DisplayName("정상 활성화 → UserResponse 반환 + activate() 호출")
         void activateSuccess() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             doNothing().when(otpService).verifyOtp(any(), eq(OtpPurpose.ACTIVATE), eq("123456"));
-            given(userRepository.existsByEmailHash(any())).willReturn(false);
+            given(userRepository.existsByEmail(any())).willReturn(false);
             given(passwordEncoder.encode(any())).willReturn("encoded-pw");
             given(studentRepository.findByUser(user)).willReturn(Optional.empty());
 
@@ -267,7 +267,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("미등록 전화번호 → RESOURCE_NOT_FOUND 예외")
         void phoneNotFound() {
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.empty());
+            given(userRepository.findByPhone(any())).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.activate(activateRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -279,7 +279,7 @@ class AuthServiceTest {
         @DisplayName("이미 활성화된 계정 → ACCOUNT_ALREADY_ACTIVATED 예외")
         void alreadyActivated() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.activate(activateRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -291,9 +291,9 @@ class AuthServiceTest {
         @DisplayName("이메일 중복 → DUPLICATE_RESOURCE 예외")
         void duplicateEmail() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             doNothing().when(otpService).verifyOtp(any(), any(), any());
-            given(userRepository.existsByEmailHash(any())).willReturn(true);
+            given(userRepository.existsByEmail(any())).willReturn(true);
 
             assertThatThrownBy(() -> authService.activate(activateRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -305,7 +305,7 @@ class AuthServiceTest {
         @DisplayName("OTP 불일치 → OTP_INVALID 예외 (otpService에서 발생)")
         void otpInvalid() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             doThrow(new BusinessException(ErrorCode.OTP_INVALID))
                     .when(otpService).verifyOtp(any(), any(), any());
 
@@ -326,7 +326,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("미등록 번호 → 항상 '인증번호가 발송되었습니다' 반환")
         void unknownPhoneReturnsMessage() {
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.empty());
+            given(userRepository.findByPhone(any())).willReturn(Optional.empty());
 
             String result = authService.requestPasswordReset(passwordResetRequest());
 
@@ -338,7 +338,7 @@ class AuthServiceTest {
         @DisplayName("미활성화 계정 → ACCOUNT_NOT_ACTIVATED 예외")
         void notActivatedAccount() {
             User user = notActivatedUser();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.requestPasswordReset(passwordResetRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -350,7 +350,7 @@ class AuthServiceTest {
         @DisplayName("활성화 계정 → OTP 발송 + 메시지 반환")
         void activatedAccountSuccess() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             given(otpService.issueOtp(any(), eq(OtpPurpose.PW_RESET))).willReturn("123456");
 
             String result = authService.requestPasswordReset(passwordResetRequest());
@@ -371,7 +371,7 @@ class AuthServiceTest {
         @DisplayName("정상 재설정 → resetPassword() + deleteAllByUserId() 호출")
         void confirmSuccess() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             doNothing().when(otpService).verifyOtp(any(), eq(OtpPurpose.PW_RESET), eq("123456"));
             given(passwordEncoder.encode(any())).willReturn("new-encoded-pw");
             doNothing().when(refreshTokenService).deleteAllByUserId(1L);
@@ -385,7 +385,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("미등록 전화번호 → RESOURCE_NOT_FOUND 예외")
         void phoneNotFound() {
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.empty());
+            given(userRepository.findByPhone(any())).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.confirmPasswordReset(passwordResetConfirmRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -397,7 +397,7 @@ class AuthServiceTest {
         @DisplayName("OTP 만료 → OTP_EXPIRED 예외")
         void otpExpired() {
             User user = activatedTeacher();
-            given(userRepository.findByPhoneHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByPhone(any())).willReturn(Optional.of(user));
             doThrow(new BusinessException(ErrorCode.OTP_EXPIRED))
                     .when(otpService).verifyOtp(any(), any(), any());
 
@@ -419,7 +419,7 @@ class AuthServiceTest {
         @DisplayName("정상 로그인 → TokenResponse 반환 + recordLoginSuccess() 호출")
         void loginSuccess() {
             User user = activatedTeacher();
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(any(), any())).willReturn(true);
             given(jwtTokenProvider.createAccessToken(any(), any(), any())).willReturn("at-value");
             given(jwtTokenProvider.createRefreshToken(any())).willReturn("rt-value");
@@ -438,7 +438,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("존재하지 않는 이메일 → AUTH_FAILED 예외")
         void emailNotFound() {
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.empty());
+            given(userRepository.findByEmail(any())).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.login(loginRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -450,7 +450,7 @@ class AuthServiceTest {
         @DisplayName("미활성화 계정 → ACCOUNT_NOT_ACTIVATED 예외")
         void accountNotActivated() {
             User user = notActivatedUser();
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.login(loginRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -462,7 +462,7 @@ class AuthServiceTest {
         @DisplayName("isActive=false 계정 → ACCOUNT_DISABLED 예외")
         void accountDisabled() {
             User user = inactiveUser();
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.login(loginRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -479,7 +479,7 @@ class AuthServiceTest {
                     .loginLockedUntil(Instant.now().plusSeconds(600))
                     .build();
             setId(user, "id", 1L);
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.login(loginRequest()))
                     .isInstanceOf(BusinessException.class)
@@ -491,7 +491,7 @@ class AuthServiceTest {
         @DisplayName("비밀번호 불일치 → AUTH_FAILED 예외 + failedLoginCount 증가")
         void wrongPassword() {
             User user = activatedTeacher();
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(any(), any())).willReturn(false);
 
             assertThatThrownBy(() -> authService.login(loginRequest()))
@@ -506,7 +506,7 @@ class AuthServiceTest {
         @DisplayName("비밀번호 5회 실패 → ACCOUNT_LOCKED 잠금 + failedLoginCount=5")
         void loginFailureLock() {
             User user = activatedTeacher();
-            given(userRepository.findByEmailHash(any())).willReturn(Optional.of(user));
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(any(), any())).willReturn(false);
 
             for (int i = 0; i < 5; i++) {

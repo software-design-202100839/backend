@@ -9,9 +9,6 @@ spring:
   jpa:
     show-sql: false
 
-encryption:
-  key: ${ENCRYPTION_KEY}
-
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:1800000}

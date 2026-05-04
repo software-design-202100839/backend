@@ -13,7 +13,6 @@ jobs:
     env:
       DB_USERNAME: sscm
       DB_PASSWORD: sscm1234
-      ENCRYPTION_KEY: c3NjbS1kZXYtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=
       JWT_SECRET: sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
       DEV_SEED_ADMIN_PASSWORD: ${{ secrets.DEV_SEED_ADMIN_PASSWORD }}
 
@@ -61,3 +60,16 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: dev
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+       # Gradle 의존성 취약점 스캔
+      - name: Dependency check
+        run: ./gradlew dependencyCheckAnalyze --no-daemon
+        continue-on-error: true   # 취약점 있어도 CI 실패 안 함 (리포트만 생성)
+
+      - name: Upload dependency report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+            name: dependency-check-report
+            path: build/reports/dependency-check-report.html
+            retention-days: 14

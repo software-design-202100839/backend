@@ -26,6 +26,12 @@ public class Feedback {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
+    @Column(nullable = false)
+    private Integer year;
+
+    @Column(nullable = false)
+    private Integer semester;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private FeedbackCategory category;

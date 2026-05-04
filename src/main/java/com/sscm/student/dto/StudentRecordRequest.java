@@ -29,4 +29,8 @@ public class StudentRecordRequest {
 
     @NotNull(message = "내용은 필수입니다")
     private Map<String, Object> content;
+
+    private Boolean isVisibleToStudent = false;
+
+    private Boolean isVisibleToParent = false;
 }

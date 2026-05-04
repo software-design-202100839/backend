@@ -111,7 +111,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "phone", "01099998888");
             ReflectionTestUtils.setField(req, "department", "영어");
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(false);
+            given(userRepository.existsByPhone(anyString())).willReturn(false);
             given(userRepository.save(any(User.class))).willReturn(teacherUser);
             given(teacherRepository.save(any(Teacher.class))).willReturn(teacher);
 
@@ -130,7 +130,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "phone", "01011112222");
             ReflectionTestUtils.setField(req, "department", "영어");
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(true);
+            given(userRepository.existsByPhone(anyString())).willReturn(true);
 
             assertThatThrownBy(() -> adminService.registerTeacher(req))
                     .isInstanceOf(BusinessException.class)
@@ -168,7 +168,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "phone", "01077776666");
             ReflectionTestUtils.setField(req, "admissionYear", 2025);
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(false);
+            given(userRepository.existsByPhone(anyString())).willReturn(false);
             given(userRepository.save(any(User.class))).willReturn(studentUser);
             given(studentRepository.save(any(Student.class))).willReturn(student);
 
@@ -186,7 +186,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "phone", "01033334444");
             ReflectionTestUtils.setField(req, "admissionYear", 2025);
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(true);
+            given(userRepository.existsByPhone(anyString())).willReturn(true);
 
             assertThatThrownBy(() -> adminService.registerStudent(req))
                     .isInstanceOf(BusinessException.class)
@@ -222,7 +222,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "name", "신규학부모");
             ReflectionTestUtils.setField(req, "phone", "01088887777");
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(false);
+            given(userRepository.existsByPhone(anyString())).willReturn(false);
             given(userRepository.save(any(User.class))).willReturn(parentUser);
             given(parentRepository.save(any(Parent.class))).willReturn(parent);
 
@@ -239,7 +239,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "name", "신규학부모");
             ReflectionTestUtils.setField(req, "phone", "01055556666");
 
-            given(userRepository.existsByPhoneHash(anyString())).willReturn(true);
+            given(userRepository.existsByPhone(anyString())).willReturn(true);
 
             assertThatThrownBy(() -> adminService.registerParent(req))
                     .isInstanceOf(BusinessException.class)

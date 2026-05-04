@@ -26,16 +26,16 @@ public class OtpService {
     private final InviteTokenRepository inviteTokenRepository;
 
     @Transactional
-    public String issueOtp(String phoneHash, OtpPurpose purpose) {
+    public String issueOtp(String phone, OtpPurpose purpose) {
         // 1분 쿨다운 확인
-        inviteTokenRepository.findLatestCreatedAt(phoneHash, purpose).ifPresent(lastCreated -> {
+        inviteTokenRepository.findLatestCreatedAt(phone, purpose).ifPresent(lastCreated -> {
             if (lastCreated.plusSeconds(RATE_LIMIT_SECONDS).isAfter(Instant.now())) {
                 throw new BusinessException(ErrorCode.OTP_RATE_LIMIT);
             }
         });
 
         // 기존 미사용 OTP 폐기
-        inviteTokenRepository.invalidateAll(phoneHash, purpose, Instant.now());
+        inviteTokenRepository.invalidateAll(phone, purpose, Instant.now());
 
         // 신규 OTP 생성 (6자리)
         String otpCode = String.format("%06d", secureRandom.nextInt(1_000_000));
@@ -43,7 +43,7 @@ public class OtpService {
 
         inviteTokenRepository.save(
                 InviteToken.builder()
-                        .phoneHash(phoneHash)
+                        .phone(phone)
                         .otpCode(otpCode)
                         .purpose(purpose)
                         .expiresAt(expiresAt)
@@ -54,9 +54,9 @@ public class OtpService {
     }
 
     @Transactional
-    public void verifyOtp(String phoneHash, OtpPurpose purpose, String inputCode) {
+    public void verifyOtp(String phone, OtpPurpose purpose, String inputCode) {
         Instant now = Instant.now();
-        InviteToken token = inviteTokenRepository.findActiveToken(phoneHash, purpose, now)
+        InviteToken token = inviteTokenRepository.findActiveToken(phone, purpose, now)
                 .orElseThrow(() -> new BusinessException(ErrorCode.OTP_EXPIRED));
 
         if (token.isExhausted()) {

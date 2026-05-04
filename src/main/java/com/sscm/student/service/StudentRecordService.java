@@ -3,18 +3,26 @@ package com.sscm.student.service;
 import com.sscm.auth.entity.Role;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.User;
+import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.repository.StudentEnrollmentRepository;
+import com.sscm.notification.entity.NotificationReferenceType;
+import com.sscm.notification.entity.NotificationType;
+import com.sscm.notification.event.NotificationEvent;
 import com.sscm.student.dto.*;
 import com.sscm.student.entity.RecordCategory;
 import com.sscm.student.entity.StudentRecord;
 import com.sscm.student.repository.StudentRecordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,6 +33,9 @@ public class StudentRecordService {
     private final StudentRecordRepository studentRecordRepository;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final StudentEnrollmentRepository enrollmentRepository;
+    private final ParentStudentRepository parentStudentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public StudentRecordResponse createRecord(StudentRecordRequest request, Long currentUserId) {
@@ -37,11 +48,17 @@ public class StudentRecordService {
                 .semester(request.getSemester())
                 .category(request.getCategory())
                 .content(request.getContent())
+                .isVisibleToStudent(request.getIsVisibleToStudent())
+                .isVisibleToParent(request.getIsVisibleToParent())
                 .createdBy(currentUserId)
                 .updatedBy(currentUserId)
                 .build();
 
-        return StudentRecordResponse.from(studentRecordRepository.save(record));
+        StudentRecord saved = studentRecordRepository.save(record);
+
+        publishRecordNotification(student, saved);
+
+        return StudentRecordResponse.from(saved);
     }
 
     @Transactional
@@ -102,12 +119,37 @@ public class StudentRecordService {
     public StudentInfoResponse getStudentInfo(Long studentId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
-        return StudentInfoResponse.from(student);
+        List<StudentEnrollment> enrollments = enrollmentRepository.findByStudentOrderByYear(student);
+        return StudentInfoResponse.from(student, enrollments);
     }
 
     public List<StudentInfoResponse> getAllStudents() {
         return studentRepository.findAll().stream()
-                .map(StudentInfoResponse::from)
+                .map(student -> {
+                    List<StudentEnrollment> enrollments = enrollmentRepository.findByStudentOrderByYear(student);
+                    return StudentInfoResponse.from(student, enrollments);
+                })
                 .toList();
+    }
+
+    private void publishRecordNotification(Student student, StudentRecord record) {
+        List<Long> recipientIds = new ArrayList<>();
+        if (Boolean.TRUE.equals(record.getIsVisibleToStudent())) {
+            recipientIds.add(student.getUser().getId());
+        }
+        if (Boolean.TRUE.equals(record.getIsVisibleToParent())) {
+            parentStudentRepository.findByStudent(student).forEach(ps ->
+                    recipientIds.add(ps.getParent().getUser().getId()));
+        }
+        if (recipientIds.isEmpty()) return;
+
+        eventPublisher.publishEvent(NotificationEvent.builder()
+                .recipientIds(recipientIds)
+                .type(NotificationType.RECORD_UPDATE)
+                .title("학생부 업데이트")
+                .message(String.format("%s 항목이 등록되었습니다.", record.getCategory().name()))
+                .referenceType(NotificationReferenceType.RECORD)
+                .referenceId(record.getId())
+                .build());
     }
 }

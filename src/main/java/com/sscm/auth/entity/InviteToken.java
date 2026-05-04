@@ -17,8 +17,8 @@ public class InviteToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "phone_hash", nullable = false, length = 64)
-    private String phoneHash;
+    @Column(nullable = false, length = 20)
+    private String phone;
 
     @Column(name = "otp_code", nullable = false, length = 6)
     private String otpCode;

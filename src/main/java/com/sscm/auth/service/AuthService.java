@@ -40,9 +40,9 @@ public class AuthService {
     @Transactional
     public String sendOtp(OtpSendRequest request) {
         OtpPurpose purpose = OtpPurpose.valueOf(request.getPurpose());
-        String phoneHash = EncryptionUtil.sha256(request.getPhone());
+        String phone = request.getPhone();
 
-        userRepository.findByPhoneHash(phoneHash).ifPresent(user -> {
+        userRepository.findByPhone(phone).ifPresent(user -> {
             if (purpose == OtpPurpose.ACTIVATE && user.getIsActivated()) {
                 throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED);
             }
@@ -50,9 +50,9 @@ public class AuthService {
                 throw new BusinessException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
             }
 
-            String otpCode = otpService.issueOtp(phoneHash, purpose);
+            String otpCode = otpService.issueOtp(phone, purpose);
             // SMS 발송 (Phase 6에서 Solapi 연동 예정)
-            log.info("[OTP] phone={}, purpose={}, code={}", request.getPhone(), purpose, otpCode);
+            log.info("[OTP] phone={}, purpose={}, code={}", phone, purpose, otpCode);
         });
 
         return OTP_SENT_MESSAGE;
@@ -63,18 +63,18 @@ public class AuthService {
      */
     @Transactional
     public UserResponse activate(ActivateRequest request) {
-        String phoneHash = EncryptionUtil.sha256(request.getPhone());
+        String phone = request.getPhone();
 
-        User user = userRepository.findByPhoneHash(phoneHash)
+        User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         if (user.getIsActivated()) {
             throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED);
         }
 
-        otpService.verifyOtp(phoneHash, OtpPurpose.ACTIVATE, request.getOtpCode());
+        otpService.verifyOtp(phone, OtpPurpose.ACTIVATE, request.getOtpCode());
 
-        if (userRepository.existsByEmailHash(EncryptionUtil.sha256(request.getEmail()))) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
         }
 
@@ -88,14 +88,14 @@ public class AuthService {
      */
     @Transactional
     public String requestPasswordReset(PasswordResetRequest request) {
-        String phoneHash = EncryptionUtil.sha256(request.getPhone());
+        String phone = request.getPhone();
 
-        userRepository.findByPhoneHash(phoneHash).ifPresent(user -> {
+        userRepository.findByPhone(phone).ifPresent(user -> {
             if (!user.getIsActivated()) {
                 throw new BusinessException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
             }
-            String otpCode = otpService.issueOtp(phoneHash, OtpPurpose.PW_RESET);
-            log.info("[OTP] phone={}, purpose=PW_RESET, code={}", request.getPhone(), otpCode);
+            String otpCode = otpService.issueOtp(phone, OtpPurpose.PW_RESET);
+            log.info("[OTP] phone={}, purpose=PW_RESET, code={}", phone, otpCode);
         });
 
         return OTP_SENT_MESSAGE;
@@ -106,12 +106,12 @@ public class AuthService {
      */
     @Transactional
     public void confirmPasswordReset(PasswordResetConfirmRequest request) {
-        String phoneHash = EncryptionUtil.sha256(request.getPhone());
+        String phone = request.getPhone();
 
-        User user = userRepository.findByPhoneHash(phoneHash)
+        User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        otpService.verifyOtp(phoneHash, OtpPurpose.PW_RESET, request.getOtpCode());
+        otpService.verifyOtp(phone, OtpPurpose.PW_RESET, request.getOtpCode());
 
         user.resetPassword(passwordEncoder.encode(request.getNewPassword()));
 
@@ -124,7 +124,7 @@ public class AuthService {
      */
     @Transactional
     public TokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailHash(EncryptionUtil.sha256(request.getEmail()))
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_FAILED));
 
         if (!user.getIsActivated()) {
