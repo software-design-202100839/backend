@@ -21,7 +21,7 @@ class StudentRecordEntityTest {
                 .student(student)
                 .year(2024)
                 .semester(1)
-                .category(RecordCategory.BASIC)
+                .category(RecordCategory.ATTENDANCE)
                 .content(Map.of("note", "우수"))
                 .createdBy(10L)
                 .updatedBy(10L)

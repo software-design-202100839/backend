@@ -44,6 +44,8 @@ class FeedbackServiceTest {
     @Mock private StudentRepository studentRepository;
     @Mock private TeacherRepository teacherRepository;
     @Mock private UserRepository userRepository;
+    @Mock private com.sscm.auth.repository.ParentStudentRepository parentStudentRepository;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private User teacherUser;
     private Teacher teacher;
@@ -72,6 +74,8 @@ class FeedbackServiceTest {
     private FeedbackRequest makeRequest(Long studentId, FeedbackCategory category, String content) {
         FeedbackRequest req = new FeedbackRequest();
         ReflectionTestUtils.setField(req, "studentId", studentId);
+        ReflectionTestUtils.setField(req, "year", 2026);
+        ReflectionTestUtils.setField(req, "semester", 1);
         ReflectionTestUtils.setField(req, "category", category);
         ReflectionTestUtils.setField(req, "content", content);
         ReflectionTestUtils.setField(req, "isVisibleToStudent", false);

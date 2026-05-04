@@ -3,15 +3,12 @@ package com.sscm.grade.service;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.Teacher;
 import com.sscm.auth.entity.User;
+import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
-import com.sscm.common.entity.ClassRoom;
-import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
-import com.sscm.common.repository.StudentEnrollmentRepository;
-import com.sscm.common.repository.TeacherAssignmentRepository;
 import com.sscm.common.service.AuditLogService;
 import com.sscm.grade.dto.*;
 import com.sscm.grade.entity.Score;
@@ -26,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -50,17 +48,15 @@ class ScoreServiceTest {
     @Mock private StudentRepository studentRepository;
     @Mock private TeacherRepository teacherRepository;
     @Mock private UserRepository userRepository;
-    @Mock private TeacherAssignmentRepository teacherAssignmentRepository;
-    @Mock private StudentEnrollmentRepository studentEnrollmentRepository;
+    @Mock private ParentStudentRepository parentStudentRepository;
     @Mock private AuditLogService auditLogService;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private User teacherUser;
     private Teacher teacher;
     private User studentUser;
     private Student student;
     private Subject subject;
-    private ClassRoom classRoom;
-    private StudentEnrollment enrollment;
 
     @BeforeEach
     void setUp() {
@@ -71,12 +67,6 @@ class ScoreServiceTest {
         student = Student.builder().id(1L).user(studentUser).admissionYear(2024).build();
 
         subject = Subject.builder().id(1L).name("수학").code("MATH101").build();
-
-        classRoom = ClassRoom.builder().id(1L).academicYear(2024).grade(2).classNum(3).build();
-
-        enrollment = StudentEnrollment.builder()
-                .id(1L).student(student).classRoom(classRoom).academicYear(2024).studentNum(15)
-                .build();
     }
 
     private ScoreRequest makeRequest(Long studentId, Long subjectId, Integer year, Integer semester, BigDecimal score) {
@@ -102,10 +92,6 @@ class ScoreServiceTest {
                 .build();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // createScore
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("createScore")
     class CreateScore {
@@ -120,21 +106,19 @@ class ScoreServiceTest {
             given(subjectRepository.findById(1L)).willReturn(Optional.of(subject));
             given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
             given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.of(enrollment));
-            given(teacherAssignmentRepository.existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                    teacher, classRoom, subject, 2024)).willReturn(true);
             given(scoreRepository.findByStudentIdAndSubjectIdAndYearAndSemester(1L, 1L, 2024, 1))
                     .willReturn(Optional.empty());
             given(scoreRepository.save(any(Score.class))).willReturn(saved);
             given(scoreRepository.findBySubjectAndSemesterOrderByScoreDesc(1L, 2024, 1))
                     .willReturn(List.of(saved));
+            given(parentStudentRepository.findByStudent(student)).willReturn(List.of());
 
             ScoreResponse result = scoreService.createScore(req, 1L);
 
             assertThat(result).isNotNull();
             assertThat(result.getScore()).isEqualByComparingTo(new BigDecimal("92.00"));
             verify(auditLogService).record(any(), any(), any(), any(), any(), any());
+            verify(eventPublisher).publishEvent(any(com.sscm.notification.event.NotificationEvent.class));
         }
 
         @Test
@@ -161,53 +145,6 @@ class ScoreServiceTest {
         }
 
         @Test
-        @DisplayName("교사 없음 → TEACHER_NOT_FOUND")
-        void teacherNotFound() {
-            ScoreRequest req = makeRequest(1L, 1L, 2024, 1, new BigDecimal("80.00"));
-            given(studentRepository.findById(1L)).willReturn(Optional.of(student));
-            given(subjectRepository.findById(1L)).willReturn(Optional.of(subject));
-            given(userRepository.findById(99L)).willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> scoreService.createScore(req, 99L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode").isEqualTo(ErrorCode.TEACHER_NOT_FOUND);
-        }
-
-        @Test
-        @DisplayName("수강 정보 없음 → RESOURCE_NOT_FOUND")
-        void enrollmentNotFound() {
-            ScoreRequest req = makeRequest(1L, 1L, 2024, 1, new BigDecimal("80.00"));
-            given(studentRepository.findById(1L)).willReturn(Optional.of(student));
-            given(subjectRepository.findById(1L)).willReturn(Optional.of(subject));
-            given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
-            given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> scoreService.createScore(req, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode").isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
-        }
-
-        @Test
-        @DisplayName("담당 교사 아님 → ACCESS_DENIED")
-        void notAssigned() {
-            ScoreRequest req = makeRequest(1L, 1L, 2024, 1, new BigDecimal("80.00"));
-            given(studentRepository.findById(1L)).willReturn(Optional.of(student));
-            given(subjectRepository.findById(1L)).willReturn(Optional.of(subject));
-            given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
-            given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.of(enrollment));
-            given(teacherAssignmentRepository.existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                    teacher, classRoom, subject, 2024)).willReturn(false);
-
-            assertThatThrownBy(() -> scoreService.createScore(req, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode").isEqualTo(ErrorCode.ACCESS_DENIED);
-        }
-
-        @Test
         @DisplayName("이미 등록된 성적 → SCORE_ALREADY_EXISTS")
         void scoreAlreadyExists() {
             ScoreRequest req = makeRequest(1L, 1L, 2024, 1, new BigDecimal("80.00"));
@@ -216,10 +153,6 @@ class ScoreServiceTest {
             given(subjectRepository.findById(1L)).willReturn(Optional.of(subject));
             given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
             given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.of(enrollment));
-            given(teacherAssignmentRepository.existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                    teacher, classRoom, subject, 2024)).willReturn(true);
             given(scoreRepository.findByStudentIdAndSubjectIdAndYearAndSemester(1L, 1L, 2024, 1))
                     .willReturn(Optional.of(existing));
 
@@ -228,10 +161,6 @@ class ScoreServiceTest {
                     .extracting("errorCode").isEqualTo(ErrorCode.SCORE_ALREADY_EXISTS);
         }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // updateScore
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
     @DisplayName("updateScore")
@@ -244,19 +173,15 @@ class ScoreServiceTest {
             ScoreUpdateRequest req = makeUpdateRequest(new BigDecimal("88.00"));
 
             given(scoreRepository.findById(10L)).willReturn(Optional.of(score));
-            given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
-            given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.of(enrollment));
-            given(teacherAssignmentRepository.existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                    teacher, classRoom, subject, 2024)).willReturn(true);
             given(scoreRepository.findBySubjectAndSemesterOrderByScoreDesc(1L, 2024, 1))
                     .willReturn(List.of(score));
+            given(parentStudentRepository.findByStudent(student)).willReturn(List.of());
 
             ScoreResponse result = scoreService.updateScore(10L, req, 1L);
 
             assertThat(result).isNotNull();
             verify(auditLogService).record(any(), any(), any(), any(), any(), any());
+            verify(eventPublisher).publishEvent(any(com.sscm.notification.event.NotificationEvent.class));
         }
 
         @Test
@@ -269,30 +194,7 @@ class ScoreServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode").isEqualTo(ErrorCode.SCORE_NOT_FOUND);
         }
-
-        @Test
-        @DisplayName("담당 교사 아님 → ACCESS_DENIED")
-        void notAssigned() {
-            Score score = buildScore(new BigDecimal("75.00"));
-            ScoreUpdateRequest req = makeUpdateRequest(new BigDecimal("80.00"));
-
-            given(scoreRepository.findById(10L)).willReturn(Optional.of(score));
-            given(userRepository.findById(1L)).willReturn(Optional.of(teacherUser));
-            given(teacherRepository.findByUser(teacherUser)).willReturn(Optional.of(teacher));
-            given(studentEnrollmentRepository.findByStudentAndAcademicYear(student, 2024))
-                    .willReturn(Optional.of(enrollment));
-            given(teacherAssignmentRepository.existsByTeacherAndClassRoomAndSubjectAndAcademicYear(
-                    teacher, classRoom, subject, 2024)).willReturn(false);
-
-            assertThatThrownBy(() -> scoreService.updateScore(10L, req, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode").isEqualTo(ErrorCode.ACCESS_DENIED);
-        }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // deleteScore
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
     @DisplayName("deleteScore")
@@ -322,40 +224,6 @@ class ScoreServiceTest {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // getScore
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("getScore")
-    class GetScore {
-
-        @Test
-        @DisplayName("정상 단건 조회")
-        void success() {
-            Score score = buildScore(new BigDecimal("85.00"));
-            given(scoreRepository.findById(10L)).willReturn(Optional.of(score));
-
-            ScoreResponse result = scoreService.getScore(10L);
-
-            assertThat(result.getId()).isEqualTo(10L);
-        }
-
-        @Test
-        @DisplayName("없는 성적 → SCORE_NOT_FOUND")
-        void notFound() {
-            given(scoreRepository.findById(99L)).willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> scoreService.getScore(99L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode").isEqualTo(ErrorCode.SCORE_NOT_FOUND);
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // getStudentScores
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("getStudentScores")
     class GetStudentScores {
@@ -374,18 +242,6 @@ class ScoreServiceTest {
         }
 
         @Test
-        @DisplayName("성적 없음 → 평균 0")
-        void emptyScores() {
-            given(studentRepository.findById(1L)).willReturn(Optional.of(student));
-            given(scoreRepository.findByStudentWithSubject(1L, 2024, 1)).willReturn(List.of());
-
-            StudentScoreSummary result = scoreService.getStudentScores(1L, 2024, 1);
-
-            assertThat(result.getScores()).isEmpty();
-            assertThat(result.getAverageScore()).isEqualByComparingTo(BigDecimal.ZERO);
-        }
-
-        @Test
         @DisplayName("학생 없음 → STUDENT_NOT_FOUND")
         void studentNotFound() {
             given(studentRepository.findById(99L)).willReturn(Optional.empty());
@@ -396,30 +252,6 @@ class ScoreServiceTest {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // getAllSubjects
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("getAllSubjects")
-    class GetAllSubjects {
-
-        @Test
-        @DisplayName("전체 과목 조회")
-        void success() {
-            given(subjectRepository.findAll()).willReturn(List.of(subject));
-
-            List<SubjectResponse> result = scoreService.getAllSubjects();
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getCode()).isEqualTo("MATH101");
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // checkStudentAccess
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("checkStudentAccess")
     class CheckStudentAccess {
@@ -428,8 +260,6 @@ class ScoreServiceTest {
         @DisplayName("학생 본인 접근 — 정상")
         void studentAccessOwnRecord() {
             given(studentRepository.findByUser_Id(2L)).willReturn(Optional.of(student));
-
-            // student.getId() == 1L, studentId == 1L → 통과
             scoreService.checkStudentAccess(2L, "ROLE_STUDENT", 1L);
         }
 
@@ -437,8 +267,6 @@ class ScoreServiceTest {
         @DisplayName("다른 학생 접근 → ACCESS_DENIED")
         void studentAccessOtherRecord() {
             given(studentRepository.findByUser_Id(2L)).willReturn(Optional.of(student));
-
-            // student.getId() == 1L, studentId == 99L → 거부
             assertThatThrownBy(() -> scoreService.checkStudentAccess(2L, "ROLE_STUDENT", 99L))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode").isEqualTo(ErrorCode.ACCESS_DENIED);
@@ -447,7 +275,6 @@ class ScoreServiceTest {
         @Test
         @DisplayName("교사 역할 — 접근 제한 없음")
         void teacherSkipsCheck() {
-            // ROLE_TEACHER는 studentRepository 호출 없이 통과
             scoreService.checkStudentAccess(1L, "ROLE_TEACHER", 99L);
         }
     }

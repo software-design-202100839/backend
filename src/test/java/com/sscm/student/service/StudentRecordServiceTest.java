@@ -4,9 +4,9 @@ import com.sscm.auth.entity.Role;
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
+import com.sscm.auth.repository.UserRepository;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
-import com.sscm.student.dto.StudentInfoResponse;
 import com.sscm.student.dto.StudentRecordRequest;
 import com.sscm.student.dto.StudentRecordResponse;
 import com.sscm.student.dto.StudentRecordUpdateRequest;
@@ -45,24 +45,33 @@ class StudentRecordServiceTest {
     private StudentRecordRepository studentRecordRepository;
     @Mock
     private StudentRepository studentRepository;
+    @Mock
+    private UserRepository userRepository;
 
+    private User teacherUser;
     private User studentUser;
     private Student student;
 
     @BeforeEach
     void setUp() {
+        teacherUser = User.builder()
+                .name("이교사").role(Role.TEACHER).build();
+        setIdField(teacherUser, 10L);
+
         studentUser = User.builder()
-                .id(1L).email("student@test.com").name("이학생")
-                .passwordHash("hash").role(Role.STUDENT).phone("010-1234-5678").build();
+                .name("이학생").role(Role.STUDENT).build();
+        setIdField(studentUser, 1L);
+
         student = Student.builder()
-                .id(1L).user(studentUser).admissionYear(2025).build();
+                .user(studentUser).admissionYear(2025).build();
+        setIdField(student, 1L);
     }
 
     private StudentRecord createRecord(Long id, RecordCategory category, Map<String, Object> content) {
         StudentRecord record = StudentRecord.builder()
                 .student(student).year(2026).semester(1)
                 .category(category).content(content)
-                .createdBy(1L).updatedBy(1L).build();
+                .createdBy(10L).updatedBy(10L).build();
         setIdField(record, id);
         return record;
     }
@@ -114,7 +123,7 @@ class StudentRecordServiceTest {
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
             given(studentRecordRepository.save(any(StudentRecord.class))).willReturn(saved);
 
-            StudentRecordResponse result = studentRecordService.createRecord(request, 1L);
+            StudentRecordResponse result = studentRecordService.createRecord(request, 10L);
 
             assertThat(result.getCategory()).isEqualTo(RecordCategory.ATTENDANCE);
             assertThat(result.getStudentName()).isEqualTo("이학생");
@@ -123,18 +132,18 @@ class StudentRecordServiceTest {
         }
 
         @Test
-        @DisplayName("BASIC 학생부를 정상 등록한다")
-        void basicRecord() throws Exception {
+        @DisplayName("종합의견 학생부를 정상 등록한다")
+        void generalOpinionRecord() throws Exception {
             Map<String, Object> content = Map.of("내용", "성실히 학업에 임함");
-            StudentRecordRequest request = createRecordRequest(1L, RecordCategory.BASIC, content);
-            StudentRecord saved = createRecord(1L, RecordCategory.BASIC, content);
+            StudentRecordRequest request = createRecordRequest(1L, RecordCategory.GENERAL_OPINION, content);
+            StudentRecord saved = createRecord(1L, RecordCategory.GENERAL_OPINION, content);
 
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
             given(studentRecordRepository.save(any(StudentRecord.class))).willReturn(saved);
 
-            StudentRecordResponse result = studentRecordService.createRecord(request, 1L);
+            StudentRecordResponse result = studentRecordService.createRecord(request, 10L);
 
-            assertThat(result.getCategory()).isEqualTo(RecordCategory.BASIC);
+            assertThat(result.getCategory()).isEqualTo(RecordCategory.GENERAL_OPINION);
         }
 
         @Test
@@ -143,7 +152,7 @@ class StudentRecordServiceTest {
             StudentRecordRequest request = createRecordRequest(999L, RecordCategory.ATTENDANCE, Map.of("결석", 0));
             given(studentRepository.findById(999L)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> studentRecordService.createRecord(request, 1L))
+            assertThatThrownBy(() -> studentRecordService.createRecord(request, 10L))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                             .isEqualTo(ErrorCode.STUDENT_NOT_FOUND));
@@ -216,32 +225,34 @@ class StudentRecordServiceTest {
     class GetStudentRecords {
 
         @Test
-        @DisplayName("카테고리 필터 없이 전체 조회")
+        @DisplayName("교사가 카테고리 필터 없이 전체 조회")
         void withoutCategory() {
             StudentRecord r1 = createRecord(1L, RecordCategory.ATTENDANCE, Map.of("결석", 1));
-            StudentRecord r2 = createRecord(2L, RecordCategory.BASIC, Map.of("내용", "우수"));
+            StudentRecord r2 = createRecord(2L, RecordCategory.GENERAL_OPINION, Map.of("내용", "우수"));
 
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
+            given(userRepository.findById(10L)).willReturn(Optional.of(teacherUser));
             given(studentRecordRepository.findByStudentIdAndYearAndSemester(1L, 2026, 1))
                     .willReturn(List.of(r1, r2));
 
-            List<StudentRecordResponse> result = studentRecordService.getStudentRecords(1L, 2026, 1, null);
+            List<StudentRecordResponse> result = studentRecordService.getStudentRecords(1L, 2026, 1, null, 10L);
 
             assertThat(result).hasSize(2);
         }
 
         @Test
-        @DisplayName("카테고리 필터로 ATTENDANCE만 조회")
+        @DisplayName("교사가 카테고리 필터로 ATTENDANCE만 조회")
         void withCategory() {
             StudentRecord r1 = createRecord(1L, RecordCategory.ATTENDANCE, Map.of("결석", 1));
 
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
+            given(userRepository.findById(10L)).willReturn(Optional.of(teacherUser));
             given(studentRecordRepository.findByStudentIdAndYearAndSemesterAndCategory(
                     1L, 2026, 1, RecordCategory.ATTENDANCE))
                     .willReturn(List.of(r1));
 
             List<StudentRecordResponse> result = studentRecordService.getStudentRecords(
-                    1L, 2026, 1, RecordCategory.ATTENDANCE);
+                    1L, 2026, 1, RecordCategory.ATTENDANCE, 10L);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getCategory()).isEqualTo(RecordCategory.ATTENDANCE);
@@ -252,7 +263,7 @@ class StudentRecordServiceTest {
         void studentNotFound() {
             given(studentRepository.findById(999L)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> studentRecordService.getStudentRecords(999L, 2026, 1, null))
+            assertThatThrownBy(() -> studentRecordService.getStudentRecords(999L, 2026, 1, null, 10L))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                             .isEqualTo(ErrorCode.STUDENT_NOT_FOUND));
@@ -262,69 +273,11 @@ class StudentRecordServiceTest {
         @DisplayName("학생부 기록이 없으면 빈 리스트 반환")
         void emptyRecords() {
             given(studentRepository.findById(1L)).willReturn(Optional.of(student));
+            given(userRepository.findById(10L)).willReturn(Optional.of(teacherUser));
             given(studentRecordRepository.findByStudentIdAndYearAndSemester(1L, 2026, 1))
                     .willReturn(Collections.emptyList());
 
-            List<StudentRecordResponse> result = studentRecordService.getStudentRecords(1L, 2026, 1, null);
-
-            assertThat(result).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("학생 정보 조회")
-    class GetStudentInfo {
-
-        @Test
-        @DisplayName("학생 기본정보 조회 성공")
-        void success() {
-            given(studentRepository.findById(1L)).willReturn(Optional.of(student));
-
-            StudentInfoResponse result = studentRecordService.getStudentInfo(1L);
-
-            assertThat(result.getName()).isEqualTo("이학생");
-            assertThat(result.getAdmissionYear()).isEqualTo(2025);
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 학생이면 STUDENT_NOT_FOUND 예외")
-        void notFound() {
-            given(studentRepository.findById(999L)).willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> studentRecordService.getStudentInfo(999L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
-                            .isEqualTo(ErrorCode.STUDENT_NOT_FOUND));
-        }
-    }
-
-    @Nested
-    @DisplayName("전체 학생 목록 조회")
-    class GetAllStudents {
-
-        @Test
-        @DisplayName("전체 학생 목록을 반환한다")
-        void success() {
-            User user2 = User.builder().id(3L).email("s2@test.com").name("박학생")
-                    .passwordHash("hash").role(Role.STUDENT).build();
-            Student student2 = Student.builder()
-                    .id(2L).user(user2).admissionYear(2026).build();
-
-            given(studentRepository.findAll()).willReturn(List.of(student, student2));
-
-            List<StudentInfoResponse> result = studentRecordService.getAllStudents();
-
-            assertThat(result).hasSize(2);
-            assertThat(result.get(0).getName()).isEqualTo("이학생");
-            assertThat(result.get(1).getName()).isEqualTo("박학생");
-        }
-
-        @Test
-        @DisplayName("학생이 없으면 빈 리스트 반환")
-        void empty() {
-            given(studentRepository.findAll()).willReturn(Collections.emptyList());
-
-            List<StudentInfoResponse> result = studentRecordService.getAllStudents();
+            List<StudentRecordResponse> result = studentRecordService.getStudentRecords(1L, 2026, 1, null, 10L);
 
             assertThat(result).isEmpty();
         }

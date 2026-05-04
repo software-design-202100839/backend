@@ -328,7 +328,7 @@ class StudentRecordControllerTest {
         @Test
         @DisplayName("카테고리 필터 없이 전체 조회 → 200")
         void withoutCategory() throws Exception {
-            given(studentRecordService.getStudentRecords(1L, 2026, 1, null))
+            given(studentRecordService.getStudentRecords(eq(1L), eq(2026), eq(1), isNull(), eq(1L)))
                     .willReturn(List.of(sampleRecordResponse()));
 
             mockMvc.perform(get("/api/v1/students/1/records")
@@ -342,7 +342,7 @@ class StudentRecordControllerTest {
         @Test
         @DisplayName("카테고리 필터 ATTENDANCE → 200")
         void withCategory() throws Exception {
-            given(studentRecordService.getStudentRecords(1L, 2026, 1, RecordCategory.ATTENDANCE))
+            given(studentRecordService.getStudentRecords(eq(1L), eq(2026), eq(1), eq(RecordCategory.ATTENDANCE), eq(1L)))
                     .willReturn(List.of(sampleRecordResponse()));
 
             mockMvc.perform(get("/api/v1/students/1/records")
@@ -357,7 +357,7 @@ class StudentRecordControllerTest {
         @Test
         @DisplayName("존재하지 않는 학생 → 404")
         void studentNotFound() throws Exception {
-            given(studentRecordService.getStudentRecords(999L, 2026, 1, null))
+            given(studentRecordService.getStudentRecords(eq(999L), eq(2026), eq(1), isNull(), eq(1L)))
                     .willThrow(new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
 
             mockMvc.perform(get("/api/v1/students/999/records")

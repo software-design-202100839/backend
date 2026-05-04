@@ -228,13 +228,15 @@ class CounselingControllerTest {
         }
 
         @Test
-        @DisplayName("어드민 권한으로 상담 수정 시도 → 403")
-        void adminCannotUpdate() throws Exception {
+        @DisplayName("어드민 권한으로 상담 수정 → 200")
+        void adminCanUpdate() throws Exception {
+            given(counselingService.updateCounseling(eq(1L), any(), eq(2L))).willReturn(sampleResponse());
+
             mockMvc.perform(put("/api/v1/counselings/1")
                             .with(admin()).with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(updateRequestJson()))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isOk());
         }
 
         @Test
