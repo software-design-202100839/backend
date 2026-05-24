@@ -25,6 +25,14 @@ configurations {
 
 repositories {
 	mavenCentral()
+	maven { url = uri("https://repo.spring.io/milestone") }  // Spring AI는 아직 milestone 저장소에 있음
+}
+
+// Spring AI BOM — Spring AI 관련 의존성 버전을 일괄 관리
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.ai:spring-ai-bom:1.0.0-M6")
+	}
 }
 
 dependencies {
@@ -43,8 +51,14 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
 	// Kafka — 도메인 이벤트를 Kafka로 발행(Producer)하고 수신(Consumer)하기 위한 Spring 래퍼
 	implementation("org.springframework.kafka:spring-kafka")
+	// Spring AI + Gemini — AI 챗봇 (Tool Use / Function Calling 패턴)
+	// Google AI Studio의 OpenAI 호환 API를 사용
+	implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter")
 	// API Documentation
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+	// Spring AI가 가져온 swagger-core와 springdoc의 swagger-annotations 버전 충돌 해결
+	implementation("io.swagger.core.v3:swagger-annotations:2.2.29")
+	implementation("io.swagger.core.v3:swagger-core-jakarta:2.2.29")
 	compileOnly("org.projectlombok:lombok")
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.projectlombok:lombok")

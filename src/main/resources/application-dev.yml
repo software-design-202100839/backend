@@ -8,6 +8,17 @@ spring:
   jpa:
     show-sql: true
 
+  # ── Spring AI (Gemini) 설정 ───────────────────────────────────
+  # Google AI Studio의 OpenAI 호환 엔드포인트를 사용
+  ai:
+    openai:
+      api-key: ${GEMINI_API_KEY:}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai   # Google AI Studio OpenAI 호환
+      chat:
+        options:
+          model: gemini-2.5-flash                     # 무료 사용 가능한 모델
+          max-tokens: 1024
+
   # ── Kafka 설정 ──────────────────────────────────────────────
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}   # Kafka 브로커 주소
