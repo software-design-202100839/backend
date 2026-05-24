@@ -1,11 +1,7 @@
 name: DAST (OWASP ZAP)
 
-# CD 완료 후 자동 실행 + 수동 실행 지원
+# 수동 실행만 지원 (배포 후 필요할 때 GitHub Actions에서 직접 실행)
 on:
-  workflow_run:
-    workflows: ["Backend CD"]
-    branches: [develop]
-    types: [completed]
   workflow_dispatch:
     inputs:
       target:
