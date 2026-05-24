@@ -16,6 +16,62 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── OLAP 인프라 ──────────────────────────────────────────────
+  # Zookeeper: Kafka 클러스터의 메타데이터(토픽 설정, 브로커 상태 등)를 관리
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: sscm-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181        # 클라이언트(Kafka)가 접속하는 포트
+      ZOOKEEPER_TICK_TIME: 2000          # 하트비트 주기 (ms)
+
+  # Kafka: 도메인 이벤트를 전달하는 메시지 브로커
+  # Producer(Spring Boot)가 이벤트를 발행하면 Consumer가 받아서 분석 DB에 적재
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: sscm-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181                  # Zookeeper 연결 주소
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+        # kafka:29092   → Docker 내부 컨테이너끼리 통신할 때 사용
+        # localhost:9092 → 호스트(Spring Boot 앱)에서 접속할 때 사용
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1                # 로컬 단일 브로커이므로 1
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Analytics DB: 분석 전용 PostgreSQL (운영 DB와 물리적으로 분리)
+  # 집계 데이터가 여기에 저장됨 → 대시보드 API는 이 DB만 조회
+  postgres-analytics:
+    image: postgres:16-alpine
+    container_name: sscm-postgres-analytics
+    ports:
+      - "5433:5432"                       # 호스트에서는 5433으로 접근 (운영 DB 5432와 구분)
+    environment:
+      POSTGRES_DB: sscm_analytics
+      POSTGRES_USER: sscm
+      POSTGRES_PASSWORD: sscm1234
+    volumes:
+      - pgdata-analytics:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sscm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── 모니터링 ────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:v2.51.0
     container_name: sscm-prometheus
@@ -43,3 +99,4 @@ services:
 
 volumes:
   pgdata:
+  pgdata-analytics:

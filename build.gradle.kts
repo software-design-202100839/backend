@@ -41,6 +41,8 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:0.12.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+	// Kafka — 도메인 이벤트를 Kafka로 발행(Producer)하고 수신(Consumer)하기 위한 Spring 래퍼
+	implementation("org.springframework.kafka:spring-kafka")
 	// API Documentation
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 	compileOnly("org.projectlombok:lombok")
@@ -48,6 +50,7 @@ dependencies {
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("org.springframework.kafka:spring-kafka-test")   // 테스트용 내장 Kafka 브로커
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

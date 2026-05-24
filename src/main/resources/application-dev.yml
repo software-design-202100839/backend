@@ -8,6 +8,30 @@ spring:
   jpa:
     show-sql: true
 
+  # ── Kafka 설정 ──────────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}   # Kafka 브로커 주소
+    producer:
+      # Producer가 메시지를 보낼 때의 직렬화 방식
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer       # 키: 문자열 (studentId)
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # 값: Java 객체 → JSON 자동 변환
+    consumer:
+      group-id: sscm-analytics              # Consumer Group ID — 같은 그룹 내 Consumer끼리 파티션을 나눠서 처리
+      auto-offset-reset: earliest            # 처음 시작할 때 토픽의 맨 처음부터 읽음 (메시지 유실 방지)
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.sscm.analytics.event   # JSON → Java 변환 시 허용할 패키지 (보안)
+
+# ── Analytics DB 설정 ──────────────────────────────────────────
+# 운영 DB(spring.datasource)와 별도로, 분석 전용 DB 접속 정보
+# Spring Boot의 기본 DataSource가 아니라 커스텀으로 등록할 것이므로 별도 네임스페이스 사용
+analytics:
+  datasource:
+    url: jdbc:postgresql://${ANALYTICS_DB_HOST:localhost}:${ANALYTICS_DB_PORT:5433}/sscm_analytics
+    username: ${ANALYTICS_DB_USER:sscm}
+    password: ${ANALYTICS_DB_PASSWORD:sscm1234}
+
 jwt:
   secret: ${JWT_SECRET:sscm-dev-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
   access-token-expiration: 1800000
