@@ -15,6 +15,8 @@ import com.sscm.grade.entity.Score;
 import com.sscm.grade.entity.Subject;
 import com.sscm.grade.repository.ScoreRepository;
 import com.sscm.grade.repository.SubjectRepository;
+import com.sscm.analytics.event.ScoreChangedEvent;
+import com.sscm.analytics.event.payload.ScoreEventPayload;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -76,6 +78,7 @@ public class ScoreService {
                 null, request.getScore().toPlainString(), currentUserId);
 
         publishScoreNotification(student, subject, saved);
+        publishScoreAnalyticsEvent("CREATED", saved);
 
         return ScoreResponse.from(saved);
     }
@@ -95,6 +98,7 @@ public class ScoreService {
                 oldScore, request.getScore().toPlainString(), currentUserId);
 
         publishScoreNotification(score.getStudent(), score.getSubject(), score);
+        publishScoreAnalyticsEvent("UPDATED", score);
 
         return ScoreResponse.from(score);
     }
@@ -108,6 +112,7 @@ public class ScoreService {
         Integer year = score.getYear();
         Integer semester = score.getSemester();
 
+        publishScoreAnalyticsEvent("DELETED", score);
         scoreRepository.delete(score);
         updateRanks(subjectId, year, semester);
     }
@@ -192,6 +197,21 @@ public class ScoreService {
                 .referenceType(NotificationReferenceType.SCORE)
                 .referenceId(score.getId())
                 .build());
+    }
+
+    /** 분석 이벤트 발행: Spring 내부 이벤트 → AnalyticsEventBridge → Kafka */
+    private void publishScoreAnalyticsEvent(String action, Score score) {
+        eventPublisher.publishEvent(new ScoreChangedEvent(action,
+                ScoreEventPayload.builder()
+                        .scoreId(score.getId())
+                        .studentId(score.getStudent().getId())
+                        .subjectId(score.getSubject().getId())
+                        .teacherId(score.getTeacher().getId())
+                        .year(score.getYear())
+                        .semester(score.getSemester())
+                        .score(score.getScore())
+                        .gradeLetter(score.getGradeLetter())
+                        .build()));
     }
 
     private List<Long> getStudentAndParentUserIds(Student student) {

@@ -15,6 +15,8 @@ import com.sscm.feedback.dto.FeedbackUpdateRequest;
 import com.sscm.feedback.entity.Feedback;
 import com.sscm.feedback.entity.FeedbackCategory;
 import com.sscm.feedback.repository.FeedbackRepository;
+import com.sscm.analytics.event.FeedbackChangedEvent;
+import com.sscm.analytics.event.payload.FeedbackEventPayload;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -58,6 +60,7 @@ public class FeedbackService {
         Feedback saved = feedbackRepository.save(feedback);
 
         publishFeedbackNotification(student, saved);
+        publishFeedbackAnalyticsEvent("CREATED", saved);
 
         return FeedbackResponse.from(saved);
     }
@@ -136,6 +139,18 @@ public class FeedbackService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherRepository.findByUser(user)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEACHER_NOT_FOUND));
+    }
+
+    private void publishFeedbackAnalyticsEvent(String action, Feedback feedback) {
+        eventPublisher.publishEvent(new FeedbackChangedEvent(action,
+                FeedbackEventPayload.builder()
+                        .feedbackId(feedback.getId())
+                        .studentId(feedback.getStudent().getId())
+                        .teacherId(feedback.getTeacher().getId())
+                        .year(feedback.getYear())
+                        .semester(feedback.getSemester())
+                        .category(feedback.getCategory().name())
+                        .build()));
     }
 
     private void publishFeedbackNotification(Student student, Feedback feedback) {

@@ -7,6 +7,8 @@ import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.analytics.event.CounselingChangedEvent;
+import com.sscm.analytics.event.payload.CounselingEventPayload;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.counsel.dto.CounselingRequest;
@@ -16,6 +18,7 @@ import com.sscm.counsel.entity.CounselCategory;
 import com.sscm.counsel.entity.Counseling;
 import com.sscm.counsel.repository.CounselingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class CounselingService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CounselingResponse createCounseling(CounselingRequest request, Long currentUserId) {
@@ -49,6 +53,7 @@ public class CounselingService {
                 .build();
 
         Counseling saved = counselingRepository.save(counseling);
+        publishCounselingAnalyticsEvent("CREATED", saved);
         return CounselingResponse.from(saved);
     }
 
@@ -68,6 +73,7 @@ public class CounselingService {
                 request.getNextCounselDate()
         );
 
+        publishCounselingAnalyticsEvent("UPDATED", counseling);
         return CounselingResponse.from(counseling);
     }
 
@@ -133,6 +139,17 @@ public class CounselingService {
         if (!counseling.getTeacher().getId().equals(teacher.getId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
+    }
+
+    private void publishCounselingAnalyticsEvent(String action, Counseling counseling) {
+        eventPublisher.publishEvent(new CounselingChangedEvent(action,
+                CounselingEventPayload.builder()
+                        .counselingId(counseling.getId())
+                        .studentId(counseling.getStudent().getId())
+                        .teacherId(counseling.getTeacher().getId())
+                        .counselDate(counseling.getCounselDate())
+                        .category(counseling.getCategory().name())
+                        .build()));
     }
 
     private Teacher findTeacherByUserId(Long userId) {

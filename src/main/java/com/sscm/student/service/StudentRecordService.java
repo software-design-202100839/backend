@@ -10,6 +10,8 @@ import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.common.repository.StudentEnrollmentRepository;
+import com.sscm.analytics.event.RecordChangedEvent;
+import com.sscm.analytics.event.payload.RecordEventPayload;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -57,6 +59,7 @@ public class StudentRecordService {
         StudentRecord saved = studentRecordRepository.save(record);
 
         publishRecordNotification(student, saved);
+        publishRecordAnalyticsEvent("CREATED", saved);
 
         return StudentRecordResponse.from(saved);
     }
@@ -130,6 +133,17 @@ public class StudentRecordService {
                     return StudentInfoResponse.from(student, enrollments);
                 })
                 .toList();
+    }
+
+    private void publishRecordAnalyticsEvent(String action, StudentRecord record) {
+        eventPublisher.publishEvent(new RecordChangedEvent(action,
+                RecordEventPayload.builder()
+                        .recordId(record.getId())
+                        .studentId(record.getStudent().getId())
+                        .year(record.getYear())
+                        .semester(record.getSemester())
+                        .category(record.getCategory().name())
+                        .build()));
     }
 
     private void publishRecordNotification(Student student, StudentRecord record) {
