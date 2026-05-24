@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface ParentRepository extends JpaRepository<Parent, Long> {
     Optional<Parent> findByUser(User user);
+    Optional<Parent> findByUser_Id(Long userId);
 }
