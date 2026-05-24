@@ -1,11 +1,11 @@
 package com.sscm.analytics.service;
 
 import com.sscm.analytics.repository.AnalyticsJdbcRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +22,15 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AnalyticsDataLoader {
 
     private final JdbcTemplate primaryJdbc;   // 운영 DB
     private final AnalyticsJdbcRepository analyticsRepo;
+
+    public AnalyticsDataLoader(DataSource dataSource, AnalyticsJdbcRepository analyticsRepo) {
+        this.primaryJdbc = new JdbcTemplate(dataSource);
+        this.analyticsRepo = analyticsRepo;
+    }
 
     /**
      * 전체 backfill 실행.

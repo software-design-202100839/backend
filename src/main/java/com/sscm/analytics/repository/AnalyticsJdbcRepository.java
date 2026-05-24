@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
+
 /**
  * 분석 DB (analytics)에 집계 데이터를 저장하는 Repository.
  *
@@ -24,9 +26,9 @@ public class AnalyticsJdbcRepository {
     private final JdbcTemplate analyticsJdbc;    // 분석 DB (쓰기)
 
     public AnalyticsJdbcRepository(
-            JdbcTemplate primaryJdbc,
+            DataSource dataSource,     // Spring Boot가 @Primary로 자동 생성한 운영 DB DataSource
             @Qualifier("analyticsJdbc") JdbcTemplate analyticsJdbc) {
-        this.primaryJdbc = primaryJdbc;
+        this.primaryJdbc = new JdbcTemplate(dataSource);  // 운영 DB JdbcTemplate 직접 생성
         this.analyticsJdbc = analyticsJdbc;
     }
 
@@ -399,14 +401,14 @@ public class AnalyticsJdbcRepository {
         int prevSemester = semester == 1 ? 2 : 1;
 
         var prevRows = analyticsJdbc.queryForList(
-                "SELECT avg_score FROM student_score_summary WHERE student_id = ? AND academic_year = ? AND semester = ?",
+                "SELECT average_score FROM student_score_summary WHERE student_id = ? AND academic_year = ? AND semester = ?",
                 studentId, prevYear, prevSemester);
 
-        if (prevRows.isEmpty() || prevRows.get(0).get("avg_score") == null) {
+        if (prevRows.isEmpty() || prevRows.get(0).get("average_score") == null) {
             return null;  // 이전 학기 데이터 없음
         }
 
-        double prevAvg = ((Number) prevRows.get(0).get("avg_score")).doubleValue();
+        double prevAvg = ((Number) prevRows.get(0).get("average_score")).doubleValue();
         double diff = currentAvg - prevAvg;
 
         if (diff > 2.0) return "UP";
