@@ -8,6 +8,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.micrometer.core.instrument.Counter;
+
 import java.time.Duration;
 import java.time.Instant;
 
@@ -31,6 +33,8 @@ public class TokenBlacklistService {
 
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final StringRedisTemplate redisTemplate;
+    private final Counter redisCacheHitCounter;
+    private final Counter redisCacheMissCounter;
 
     private static final String BLACKLIST_PREFIX = "token:blacklist:";
 
@@ -61,9 +65,12 @@ public class TokenBlacklistService {
         try {
             Boolean exists = redisTemplate.hasKey(BLACKLIST_PREFIX + tokenHash);
             if (Boolean.TRUE.equals(exists)) {
+                redisCacheHitCounter.increment();
                 return true;
             }
+            redisCacheMissCounter.increment();
         } catch (Exception e) {
+            redisCacheMissCounter.increment();
             // Redis 장애 시 DB fallback (느려질 뿐, 서비스 중단 없음)
             log.warn("Redis 조회 실패, DB fallback: {}", e.getMessage());
         }

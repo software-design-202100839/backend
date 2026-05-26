@@ -28,6 +28,9 @@ class AnalyticsEventBridgeTest {
     @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Mock
+    private io.micrometer.core.instrument.Counter kafkaEventCounter;
+
     @Test
     @DisplayName("ScoreChangedEvent 수신 시 scores 토픽으로 전송")
     void onScoreChanged_sendsToScoresTopic() {

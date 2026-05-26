@@ -51,6 +51,10 @@ class AuthServiceTest {
     private RefreshTokenService refreshTokenService;
     @Mock
     private OtpService otpService;
+    @Mock
+    private io.micrometer.core.instrument.Counter loginSuccessCounter;
+    @Mock
+    private io.micrometer.core.instrument.Counter loginFailureCounter;
 
     // ----------------------------------------------------------------
     // 헬퍼

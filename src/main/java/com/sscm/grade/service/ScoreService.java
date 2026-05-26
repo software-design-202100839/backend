@@ -43,6 +43,7 @@ public class ScoreService {
     private final ParentStudentRepository parentStudentRepository;
     private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final io.micrometer.core.instrument.Counter scoreCreateCounter;
 
     @Transactional
     public ScoreResponse createScore(ScoreRequest request, Long currentUserId) {
@@ -79,6 +80,7 @@ public class ScoreService {
 
         publishScoreNotification(student, subject, saved);
         publishScoreAnalyticsEvent("CREATED", saved);
+        scoreCreateCounter.increment();
 
         return ScoreResponse.from(saved);
     }

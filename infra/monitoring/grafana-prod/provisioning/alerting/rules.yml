@@ -112,3 +112,75 @@ groups:
           summary: "DB 커넥션 대기 요청이 발생했습니다. 커넥션 풀이 부족할 수 있습니다."
         labels:
           severity: warning
+
+      - uid: p95-latency-alert
+        title: API 응답 시간 p95 > 1초
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application="sscm-backend"}[5m])) by (le))
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [1]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+        for: 2m
+        annotations:
+          summary: "API p95 응답 시간이 1초를 초과했습니다. 성능 저하가 발생하고 있습니다."
+        labels:
+          severity: warning
+
+      - uid: login-failure-rate-alert
+        title: 로그인 실패율 급증
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              expr: rate(sscm_auth_login_total{application="sscm-backend",result="failure"}[5m]) / (rate(sscm_auth_login_total{application="sscm-backend",result="success"}[5m]) + rate(sscm_auth_login_total{application="sscm-backend",result="failure"}[5m]))
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.5]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+        for: 2m
+        annotations:
+          summary: "로그인 실패율이 50%를 초과했습니다. 무차별 대입 공격 또는 인증 장애 가능성이 있습니다."
+        labels:
+          severity: warning

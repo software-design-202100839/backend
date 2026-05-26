@@ -35,6 +35,7 @@ public class CounselingService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final io.micrometer.core.instrument.Counter counselingCreateCounter;
 
     @Transactional
     public CounselingResponse createCounseling(CounselingRequest request, Long currentUserId) {
@@ -54,6 +55,7 @@ public class CounselingService {
 
         Counseling saved = counselingRepository.save(counseling);
         publishCounselingAnalyticsEvent("CREATED", saved);
+        counselingCreateCounter.increment();
         return CounselingResponse.from(saved);
     }
 

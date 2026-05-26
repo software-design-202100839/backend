@@ -39,6 +39,7 @@ public class FeedbackService {
     private final UserRepository userRepository;
     private final ParentStudentRepository parentStudentRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final io.micrometer.core.instrument.Counter feedbackCreateCounter;
 
     @Transactional
     public FeedbackResponse createFeedback(FeedbackRequest request, Long currentUserId) {
@@ -61,6 +62,7 @@ public class FeedbackService {
 
         publishFeedbackNotification(student, saved);
         publishFeedbackAnalyticsEvent("CREATED", saved);
+        feedbackCreateCounter.increment();
 
         return FeedbackResponse.from(saved);
     }

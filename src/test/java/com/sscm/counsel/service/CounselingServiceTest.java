@@ -55,6 +55,9 @@ class CounselingServiceTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private io.micrometer.core.instrument.Counter counselingCreateCounter;
+
     // ── 공통 픽스처 ──────────────────────────────────────────────────────────
 
     private User teacherUser;

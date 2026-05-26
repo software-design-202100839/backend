@@ -51,6 +51,7 @@ class ScoreServiceTest {
     @Mock private ParentStudentRepository parentStudentRepository;
     @Mock private AuditLogService auditLogService;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private io.micrometer.core.instrument.Counter scoreCreateCounter;
 
     private User teacherUser;
     private Teacher teacher;

@@ -161,6 +161,91 @@
         { "expr": "jvm_memory_used_bytes{application=\"sscm-backend\",area=\"nonheap\"}", "legendFormat": "Used" },
         { "expr": "jvm_memory_committed_bytes{application=\"sscm-backend\",area=\"nonheap\"}", "legendFormat": "Committed" }
       ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "fillOpacity": 20, "lineWidth": 2, "stacking": { "mode": "normal" } }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "성공" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "실패" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 11,
+      "title": "로그인 성공/실패 비율",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(sscm_auth_login_total{application=\"sscm-backend\",result=\"success\"}[5m])", "legendFormat": "성공" },
+        { "expr": "rate(sscm_auth_login_total{application=\"sscm-backend\",result=\"failure\"}[5m])", "legendFormat": "실패" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "fillOpacity": 20, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 12,
+      "title": "도메인 데이터 등록 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(sscm_score_created_total{application=\"sscm-backend\"}[5m])", "legendFormat": "성적" },
+        { "expr": "rate(sscm_feedback_created_total{application=\"sscm-backend\"}[5m])", "legendFormat": "피드백" },
+        { "expr": "rate(sscm_counseling_created_total{application=\"sscm-backend\"}[5m])", "legendFormat": "상담" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "fillOpacity": 20, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "id": 13,
+      "title": "Kafka 이벤트 발행 속도",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(sscm_kafka_event_published_total{application=\"sscm-backend\"}[5m])", "legendFormat": "이벤트/초" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 20, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "id": 14,
+      "title": "Kafka Consumer Lag",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "kafka_consumer_fetch_manager_records_lag{application=\"sscm-backend\"}", "legendFormat": "{{topic}} - {{partition}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": { "fillOpacity": 20, "lineWidth": 2 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "green", "value": 0.8 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "id": 15,
+      "title": "Redis 캐시 히트율",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(sscm_redis_cache_hit_total{application=\"sscm-backend\"}[5m]) / (rate(sscm_redis_cache_hit_total{application=\"sscm-backend\"}[5m]) + rate(sscm_redis_cache_miss_total{application=\"sscm-backend\"}[5m]))", "legendFormat": "히트율" }
+      ]
     }
   ],
   "schemaVersion": 39,

@@ -46,6 +46,7 @@ class FeedbackServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private com.sscm.auth.repository.ParentStudentRepository parentStudentRepository;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock private io.micrometer.core.instrument.Counter feedbackCreateCounter;
 
     private User teacherUser;
     private Teacher teacher;

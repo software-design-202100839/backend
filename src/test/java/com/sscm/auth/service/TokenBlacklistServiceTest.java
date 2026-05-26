@@ -2,10 +2,11 @@ package com.sscm.auth.service;
 
 import com.sscm.auth.entity.TokenBlacklist;
 import com.sscm.auth.repository.TokenBlacklistRepository;
+import io.micrometer.core.instrument.Counter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,7 +24,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("TokenBlacklistService 단위 테스트")
 class TokenBlacklistServiceTest {
 
-    @InjectMocks
     private TokenBlacklistService tokenBlacklistService;
 
     @Mock
@@ -34,6 +34,19 @@ class TokenBlacklistServiceTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private Counter redisCacheHitCounter;
+
+    @Mock
+    private Counter redisCacheMissCounter;
+
+    @BeforeEach
+    void setUp() {
+        tokenBlacklistService = new TokenBlacklistService(
+                tokenBlacklistRepository, redisTemplate,
+                redisCacheHitCounter, redisCacheMissCounter);
+    }
 
     @Test
     @DisplayName("addToBlacklist — 미존재 시 DB + Redis 저장")
@@ -67,6 +80,7 @@ class TokenBlacklistServiceTest {
 
         assertThat(tokenBlacklistService.isBlacklisted("hash")).isTrue();
         verify(tokenBlacklistRepository, never()).existsByTokenHash(anyString());
+        verify(redisCacheHitCounter).increment();
     }
 
     @Test
@@ -78,6 +92,7 @@ class TokenBlacklistServiceTest {
 
         assertThat(tokenBlacklistService.isBlacklisted("hash")).isTrue();
         verify(valueOperations).set(anyString(), anyString(), any());
+        verify(redisCacheMissCounter).increment();
     }
 
     @Test
@@ -87,6 +102,7 @@ class TokenBlacklistServiceTest {
         given(tokenBlacklistRepository.existsByTokenHash("none")).willReturn(false);
 
         assertThat(tokenBlacklistService.isBlacklisted("none")).isFalse();
+        verify(redisCacheMissCounter).increment();
     }
 
     @Test
@@ -98,5 +114,6 @@ class TokenBlacklistServiceTest {
         doThrow(new RuntimeException("Redis 저장 실패")).when(valueOperations).set(anyString(), anyString(), any());
 
         assertThat(tokenBlacklistService.isBlacklisted("hash")).isTrue();
+        verify(redisCacheMissCounter).increment();
     }
 }

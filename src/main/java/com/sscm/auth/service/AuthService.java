@@ -32,6 +32,8 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final RefreshTokenService refreshTokenService;
     private final OtpService otpService;
+    private final io.micrometer.core.instrument.Counter loginSuccessCounter;
+    private final io.micrometer.core.instrument.Counter loginFailureCounter;
 
     /**
      * OTP 발송 — ACTIVATE(최초 활성화) 또는 PW_RESET(비밀번호 찾기)
@@ -141,10 +143,12 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             user.recordLoginFailure();
+            loginFailureCounter.increment();
             throw new BusinessException(ErrorCode.AUTH_FAILED);
         }
 
         user.recordLoginSuccess();
+        loginSuccessCounter.increment();
         return issueTokens(user);
     }
 

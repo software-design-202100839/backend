@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 public class AnalyticsEventBridge {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final io.micrometer.core.instrument.Counter kafkaEventCounter;
 
     @Async
     @EventListener
@@ -36,6 +37,7 @@ public class AnalyticsEventBridge {
                 "SCORE_" + event.getAction(), event.getPayload());
 
         kafkaTemplate.send(KafkaConfig.TOPIC_SCORES, key, analyticsEvent);
+        kafkaEventCounter.increment();
         log.debug("Kafka 전송: topic={}, key={}, type={}",
                 KafkaConfig.TOPIC_SCORES, key, analyticsEvent.getEventType());
     }
