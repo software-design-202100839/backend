@@ -49,6 +49,33 @@ Parameters:
     Default: CHANGE_ME
     Description: "AES-256-GCM 암호화 키 (SSCM-55)"
 
+  KafkaBootstrapServers:
+    Type: String
+    Default: "CHANGE_ME"
+    Description: "MSK bootstrap servers (예: b-1.xxx:9092,b-2.xxx:9092)"
+
+  AnalyticsDbUrl:
+    Type: String
+    Default: "jdbc:postgresql://sscm-analytics-db.xxxx.ap-northeast-2.rds.amazonaws.com:5432/sscm_analytics"
+    Description: "Analytics DB JDBC URL"
+
+  AnalyticsDbUsername:
+    Type: String
+    Default: sscm
+    Description: "Analytics DB username"
+
+  AnalyticsDbPassword:
+    Type: String
+    NoEcho: true
+    Default: CHANGE_ME
+    Description: "Analytics DB password"
+
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+    Default: CHANGE_ME
+    Description: "Gemini API Key (Google AI Studio)"
+
 # ============================================================
 # Resources
 # ============================================================
@@ -238,6 +265,46 @@ Resources:
       Type: String
       Value: !Ref EncryptionKey
       Description: "AES-256-GCM 암호화 키"
+
+  ParamKafkaBootstrapServers:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/kafka-bootstrap-servers
+      Type: String
+      Value: !Ref KafkaBootstrapServers
+      Description: "MSK bootstrap servers"
+
+  ParamAnalyticsDbUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/analytics-db-url
+      Type: String
+      Value: !Ref AnalyticsDbUrl
+      Description: "Analytics DB JDBC URL"
+
+  ParamAnalyticsDbUsername:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/analytics-db-username
+      Type: String
+      Value: !Ref AnalyticsDbUsername
+      Description: "Analytics DB username"
+
+  ParamAnalyticsDbPassword:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/analytics-db-password
+      Type: String
+      Value: !Ref AnalyticsDbPassword
+      Description: "Analytics DB password"
+
+  ParamGeminiApiKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sscm/prod/gemini-api-key
+      Type: String
+      Value: !Ref GeminiApiKey
+      Description: "Gemini API Key"
 
 # ============================================================
 # Outputs

@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 
 @Getter
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class StudentScoreSummaryDto {
     private Long studentId;
     private String studentName;

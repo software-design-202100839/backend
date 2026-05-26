@@ -1,20 +1,20 @@
 name: Backend CD
 
 on:
-  workflow_dispatch:   # 수동 실행만 지원 (서버 켤 때 GitHub Actions에서 직접 실행)
+  workflow_dispatch:   # 수동 실행만 지원
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: sscm-backend
+  ECS_CLUSTER: sscm-cluster
+  ECS_SERVICE: sscm-backend
 
 jobs:
   # ── 1단계: Docker 이미지 빌드 → ECR 푸시 ────────────────────────────────────
   build-and-push:
-    # 수동(workflow_dispatch)으로만 실행
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.build.outputs.image-tag }}
-      ecr-registry: ${{ steps.login-ecr.outputs.registry }}
 
     steps:
       - name: Checkout
@@ -44,55 +44,42 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # ── 2단계: EC2 SSH → docker compose pull & up ────────────────────────────────
+  # ── 2단계: ECS 서비스 강제 재배포 ────────────────────────────────────────────
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # docker-compose.prod.yml + nginx.conf을 EC2로 전송
-      - name: Copy config files to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.prod.yml,infra/nginx/nginx.conf"
-          target: /opt/sscm
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      # EC2에서 새 이미지로 백엔드만 재시작
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          ECR_REGISTRY: ${{ needs.build-and-push.outputs.ecr-registry }}
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: ECR_REGISTRY,IMAGE_TAG
-          script: |
-            cd /opt/sscm
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment \
+            --query 'service.deployments[0].id' \
+            --output text
 
-            # ECR 로그인 (EC2 인스턴스 프로파일 또는 환경변수 자격증명 사용)
-            aws ecr get-login-password --region ap-northeast-2 \
-              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+      - name: Wait for deployment stability
+        run: |
+          echo "Waiting for ECS deployment to stabilize..."
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE
+          echo "Deployment stable"
 
-            # 최신 백엔드 이미지 pull → 서비스 재시작 (다운타임 최소화)
-            # --env-file: compose 파일 변수 치환용 (.env.prod에서 DB_PASSWORD 등 로드)
-            IMAGE_TAG=$IMAGE_TAG docker compose --env-file .env.prod \
-              -f docker-compose.prod.yml pull backend
-            IMAGE_TAG=$IMAGE_TAG docker compose --env-file .env.prod \
-              -f docker-compose.prod.yml up -d --no-deps --wait backend
-
-      # 헬스체크: /actuator/health 가 UP 반환하는지 확인
       - name: Health check
         run: |
-          echo "Waiting for application to start..."
-          sleep 20
-          curl -sf "http://${{ secrets.EC2_HOST }}/actuator/health" \
-            | grep -q '"status":"UP"'
+          ALB_DNS=$(aws cloudformation describe-stacks \
+            --stack-name sscm-alb \
+            --query 'Stacks[0].Outputs[?OutputKey==`AlbDnsName`].OutputValue' \
+            --output text)
+          echo "ALB DNS: $ALB_DNS"
+          curl -sf "http://$ALB_DNS/actuator/health" | grep -q '"status":"UP"'
           echo "Health check passed"

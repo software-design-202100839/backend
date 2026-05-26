@@ -49,6 +49,8 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:0.12.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+	// Redis — JWT 블랙리스트 캐시 + WebSocket 세션 공유 (다중 인스턴스 대응)
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	// Kafka — 도메인 이벤트를 Kafka로 발행(Producer)하고 수신(Consumer)하기 위한 Spring 래퍼
 	implementation("org.springframework.kafka:spring-kafka")
 	// Spring AI + Gemini — AI 챗봇 (Tool Use / Function Calling 패턴)

@@ -102,6 +102,35 @@ Resources:
           Value: sscm
 
   # ----------------------------------------------------------
+  # RDS PostgreSQL — 분석 DB (OLAP)
+  # ----------------------------------------------------------
+  AnalyticsRdsInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: sscm-analytics-db
+      Engine: postgres
+      EngineVersion: '16'
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBName: sscm_analytics
+      MasterUsername: sscm
+      MasterUserPassword: !Ref DbPassword
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 1
+      DeletionProtection: false
+      Tags:
+        - Key: Project
+          Value: sscm
+        - Key: Purpose
+          Value: analytics-olap
+
+  # ----------------------------------------------------------
   # ElastiCache Redis
   # ----------------------------------------------------------
   RedisSubnetGroup:
@@ -143,3 +172,13 @@ Outputs:
     Description: "Parameter Store /sscm/prod/redis-host 에 입력할 값"
     Export:
       Name: sscm-redis-endpoint
+
+  AnalyticsRdsEndpoint:
+    Value: !GetAtt AnalyticsRdsInstance.Endpoint.Address
+    Description: "분석 DB endpoint"
+    Export:
+      Name: sscm-analytics-rds-endpoint
+
+  AnalyticsRdsJdbcUrl:
+    Value: !Sub "jdbc:postgresql://${AnalyticsRdsInstance.Endpoint.Address}:5432/sscm_analytics"
+    Description: "분석 DB JDBC URL"

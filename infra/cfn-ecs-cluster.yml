@@ -163,6 +163,16 @@ Resources:
               ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/redis-host
             - Name: ENCRYPTION_KEY
               ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/encryption-key
+            - Name: KAFKA_BOOTSTRAP_SERVERS
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/kafka-bootstrap-servers
+            - Name: ANALYTICS_DB_URL
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/analytics-db-url
+            - Name: ANALYTICS_DB_USERNAME
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/analytics-db-username
+            - Name: ANALYTICS_DB_PASSWORD
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/analytics-db-password
+            - Name: GEMINI_API_KEY
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sscm/prod/gemini-api-key
           LogConfiguration:
             LogDriver: awslogs
             Options:

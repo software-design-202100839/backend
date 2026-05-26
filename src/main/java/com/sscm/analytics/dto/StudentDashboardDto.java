@@ -8,6 +8,8 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class StudentDashboardDto {
     private Long studentId;
     private String studentName;

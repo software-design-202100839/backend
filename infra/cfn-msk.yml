@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  SSCM MSK (Managed Kafka) Cluster
+  OLAP 이벤트 스트리밍용 Kafka
+
+# ============================================================
+# Parameters
+# ============================================================
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: MSK가 배치될 VPC
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "MSK 서브넷 (2개 이상, AZ 분산)"
+
+  VpcCidr:
+    Type: String
+    Default: "172.31.0.0/16"
+    Description: "VPC CIDR 블록"
+
+# ============================================================
+# Resources
+# ============================================================
+Resources:
+
+  # ----------------------------------------------------------
+  # Security Group
+  # ----------------------------------------------------------
+  MskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MSK Kafka - ports 9092, 9094
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 9092
+          ToPort: 9092
+          CidrIp: !Ref VpcCidr
+          Description: Kafka plaintext (VPC internal)
+        - IpProtocol: tcp
+          FromPort: 9094
+          ToPort: 9094
+          CidrIp: !Ref VpcCidr
+          Description: Kafka TLS (VPC internal)
+      Tags:
+        - Key: Name
+          Value: sscm-msk-sg
+
+  # ----------------------------------------------------------
+  # MSK Cluster Configuration
+  # ----------------------------------------------------------
+  MskConfiguration:
+    Type: AWS::MSK::Configuration
+    Properties:
+      Name: sscm-msk-config
+      ServerProperties: |
+        auto.create.topics.enable=true
+        default.replication.factor=2
+        min.insync.replicas=1
+        num.partitions=3
+        log.retention.hours=24
+
+  # ----------------------------------------------------------
+  # MSK Cluster
+  # ----------------------------------------------------------
+  MskCluster:
+    Type: AWS::MSK::Cluster
+    Properties:
+      ClusterName: sscm-kafka
+      KafkaVersion: "3.6.0"
+      NumberOfBrokerNodes: 2
+      BrokerNodeGroupInfo:
+        InstanceType: kafka.t3.small
+        SecurityGroups:
+          - !Ref MskSecurityGroup
+        ClientSubnets: !Ref SubnetIds
+        StorageInfo:
+          EBSStorageInfo:
+            VolumeSize: 10
+      ConfigurationInfo:
+        Arn: !GetAtt MskConfiguration.Arn
+        Revision: 1
+      ClientAuthentication:
+        Unauthenticated:
+          Enabled: true
+      EncryptionInfo:
+        EncryptionInTransit:
+          ClientBroker: PLAINTEXT
+          InCluster: false
+      Tags:
+        Project: sscm
+        Purpose: olap-event-streaming
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  MskClusterArn:
+    Value: !Ref MskCluster
+    Description: MSK Cluster ARN
+    Export:
+      Name: sscm-msk-arn
+
+  MskSecurityGroupId:
+    Value: !Ref MskSecurityGroup
+    Export:
+      Name: sscm-msk-sg-id

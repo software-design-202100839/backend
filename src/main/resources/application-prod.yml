@@ -1,13 +1,57 @@
-# 프로덕션 프로파일 — 모든 값은 환경변수로 주입 (EC2 + Docker Compose)
+# 프로덕션 프로파일 — 모든 값은 환경변수로 주입 (ECS + SSM Parameter Store)
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:postgres}:5432/${DB_NAME:sscm}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sscm}
+    username: ${DB_USERNAME:sscm}
+    password: ${DB_PASSWORD:sscm1234}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
 
   jpa:
     show-sql: false
+
+  # ── Redis (ElastiCache) ───────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+  # ── Kafka (MSK) ──────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: sscm-analytics
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.sscm.analytics.event
+
+  # ── Spring AI (Gemini) ───────────────────────────────────
+  ai:
+    openai:
+      api-key: ${GEMINI_API_KEY:}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      chat:
+        options:
+          model: gemini-2.5-flash
+          max-tokens: 1024
+
+# ── Analytics DB (OLAP) ──────────────────────────────────
+analytics:
+  datasource:
+    url: ${ANALYTICS_DB_URL:jdbc:postgresql://localhost:5433/sscm_analytics}
+    username: ${ANALYTICS_DB_USERNAME:sscm}
+    password: ${ANALYTICS_DB_PASSWORD:sscm1234}
+
+dev:
+  seed:
+    admin:
+      password: ${DEV_SEED_ADMIN_PASSWORD:admin1234}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -24,10 +68,10 @@ management:
       show-details: never
   metrics:
     tags:
-      application: sscm-backend   # Grafana/Prometheus 라벨 필터용
+      application: sscm-backend
     distribution:
       percentiles-histogram:
-        http.server.requests: true  # p95 histogram_quantile 활성화
+        http.server.requests: true
 
 logging:
   level:

@@ -20,6 +20,17 @@ import java.util.Map;
  * analyticsJdbc(분석 DB)만 사용. 운영 DB에는 접근하지 않는다.
  * → 분석 쿼리가 운영 DB에 영향을 주지 않음 (OLAP 분리의 핵심)
  */
+/**
+ * 분석 DB에서 집계 데이터를 조회하는 서비스.
+ *
+ * analyticsJdbc(분석 DB)만 사용. 운영 DB에는 접근하지 않는다.
+ * → 분석 쿼리가 운영 DB에 영향을 주지 않음 (OLAP 분리의 핵심)
+ *
+ * 응답 캐시(Redis) 검토 결과:
+ * - 0.5 vCPU 환경에서 ObjectMapper 직렬화 오버헤드 > DB 절약분
+ * - 부하 테스트에서 p95가 791ms → 1,400ms로 오히려 악화
+ * - 결론: 현재 인프라 스펙에서는 응답 캐시 불필요. CPU 스펙 업 시 재검토.
+ */
 @Slf4j
 @Service
 public class AnalyticsDashboardService {
