@@ -1,7 +1,13 @@
 name: Backend CD
 
 on:
-  workflow_dispatch:   # 수동 실행만 지원
+  workflow_dispatch:   # 수동 실행도 가능
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'infra/loadtest/**'
 
 env:
   AWS_REGION: ap-northeast-2
