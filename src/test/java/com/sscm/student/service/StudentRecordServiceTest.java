@@ -47,6 +47,8 @@ class StudentRecordServiceTest {
     private StudentRepository studentRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private User teacherUser;
     private User studentUser;

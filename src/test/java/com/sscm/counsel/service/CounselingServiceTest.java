@@ -52,6 +52,9 @@ class CounselingServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     // ── 공통 픽스처 ──────────────────────────────────────────────────────────
 
     private User teacherUser;
