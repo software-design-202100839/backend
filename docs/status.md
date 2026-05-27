@@ -19,7 +19,8 @@ SSCM(Smart School Class Management) 프로젝트의 모든 개발 스프린트�
 | CI/CD | 완료 | 백엔드: GitHub Actions → ECR → ECS 자동 배포, 프론트: S3 + CloudFront CD |
 | SonarCloud | 개선 완료 | 커버리지 제외 설정, 보안 핫스팟 수정, Quality Gate 통과 |
 | 부하 테스트 | 완료 | k6 200VU 기준 p95 791ms, 140 req/s, 에러율 0% |
-| 프론트엔드 UX | 완료 | 플로팅 AI 위젯, 학생 선택 UX 일관성 개선 |
+| 프론트엔드 UX | 완료 | UI 전면 리디자인 — Collapsible 사이드바, StudentDrawer, PrivacyBadge, 분석 탭, 마크다운 렌더링 |
+| 대규모 시드 데이터 | 완료 | /seed/large: 30명 × 3학년도 × 2학기, 성적 900건, 피드백 544건, 상담 271건, 학생부 903건 |
 
 ---
 
