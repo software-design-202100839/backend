@@ -22,6 +22,14 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
             @Param("year") Integer year,
             @Param("semester") Integer semester);
 
+    @Query("SELECT s FROM Score s JOIN FETCH s.student st JOIN FETCH st.user " +
+            "WHERE s.subject.id = :subjectId AND s.year = :year AND s.semester = :semester " +
+            "ORDER BY s.score DESC")
+    List<Score> findBySubjectAndSemesterWithStudentOrderByScoreDesc(
+            @Param("subjectId") Long subjectId,
+            @Param("year") Integer year,
+            @Param("semester") Integer semester);
+
     @Query("SELECT s FROM Score s JOIN FETCH s.subject WHERE s.student.id = :studentId " +
             "AND s.year = :year AND s.semester = :semester")
     List<Score> findByStudentWithSubject(

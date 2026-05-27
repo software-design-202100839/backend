@@ -133,6 +133,11 @@ public class ScoreService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
 
+        Long schoolId = TenantContext.getSchoolId();
+        if (schoolId != null && !student.getUser().getSchool().getId().equals(schoolId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         List<Score> scores = scoreRepository.findByStudentWithSubject(studentId, year, semester);
         List<ScoreResponse> scoreResponses = scores.stream()
                 .map(ScoreResponse::from)

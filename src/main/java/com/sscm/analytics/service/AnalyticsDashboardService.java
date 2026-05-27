@@ -217,6 +217,18 @@ public class AnalyticsDashboardService {
                 .build();
     }
 
+    // ── 위험 학생 ─────────────────────────────────────────────
+
+    public List<Map<String, Object>> getAtRiskStudents(Long schoolId, Integer year, Integer semester) {
+        return analyticsJdbc.queryForList(
+                "SELECT student_id, student_name, avg_score, risk_level, score_trend " +
+                "FROM student_learning_dashboard " +
+                "WHERE school_id = ? AND academic_year = ? AND semester = ? " +
+                "AND risk_level IN ('MEDIUM', 'HIGH') " +
+                "ORDER BY CASE risk_level WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 END, avg_score ASC",
+                schoolId, year, semester);
+    }
+
     // ── 헬퍼 ─────────────────────────────────────────────────
 
     private SubjectStatisticsDto mapToSubjectStatistics(Map<String, Object> row) {

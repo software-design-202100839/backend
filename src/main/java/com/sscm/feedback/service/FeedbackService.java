@@ -111,8 +111,12 @@ public class FeedbackService {
     }
 
     public List<FeedbackResponse> getFeedbacksByStudent(Long studentId, FeedbackCategory category) {
-        studentRepository.findById(studentId)
+        Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        Long schoolId = TenantContext.getSchoolId();
+        if (schoolId != null && !student.getUser().getSchool().getId().equals(schoolId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
 
         List<Feedback> feedbacks;
         if (category != null) {

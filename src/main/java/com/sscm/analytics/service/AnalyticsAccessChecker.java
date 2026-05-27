@@ -11,6 +11,7 @@ import com.sscm.common.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 분석 API 접근 권한 검증.
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AnalyticsAccessChecker {
 
     private final StudentRepository studentRepository;

@@ -92,8 +92,12 @@ public class StudentRecordService {
 
     public List<StudentRecordResponse> getStudentRecords(Long studentId, Integer year, Integer semester,
                                                           RecordCategory category, Long callerId) {
-        studentRepository.findById(studentId)
+        Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        Long schoolId = TenantContext.getSchoolId();
+        if (schoolId != null && !student.getUser().getSchool().getId().equals(schoolId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
 
         User caller = userRepository.findById(callerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));

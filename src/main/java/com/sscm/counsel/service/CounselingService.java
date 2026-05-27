@@ -100,8 +100,12 @@ public class CounselingService {
     }
 
     public List<CounselingResponse> getCounselingsByStudent(Long studentId, CounselCategory category) {
-        studentRepository.findById(studentId)
+        Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        Long schoolId = TenantContext.getSchoolId();
+        if (schoolId != null && !student.getUser().getSchool().getId().equals(schoolId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
 
         List<Counseling> counselings;
         if (category != null) {
