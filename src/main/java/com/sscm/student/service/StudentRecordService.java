@@ -12,6 +12,7 @@ import com.sscm.common.exception.ErrorCode;
 import com.sscm.common.repository.StudentEnrollmentRepository;
 import com.sscm.analytics.event.RecordChangedEvent;
 import com.sscm.analytics.event.payload.RecordEventPayload;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -43,6 +44,9 @@ public class StudentRecordService {
     public StudentRecordResponse createRecord(StudentRecordRequest request, Long currentUserId) {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        if (!student.getUser().getSchool().getId().equals(TenantContext.requireSchoolId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
 
         StudentRecord record = StudentRecord.builder()
                 .student(student)
@@ -127,7 +131,8 @@ public class StudentRecordService {
     }
 
     public List<StudentInfoResponse> getAllStudents() {
-        return studentRepository.findAll().stream()
+        Long schoolId = TenantContext.requireSchoolId();
+        return studentRepository.findByUser_School_Id(schoolId).stream()
                 .map(student -> {
                     List<StudentEnrollment> enrollments = enrollmentRepository.findByStudentOrderByYear(student);
                     return StudentInfoResponse.from(student, enrollments);
@@ -140,6 +145,7 @@ public class StudentRecordService {
                 RecordEventPayload.builder()
                         .recordId(record.getId())
                         .studentId(record.getStudent().getId())
+                        .schoolId(TenantContext.getSchoolId())
                         .year(record.getYear())
                         .semester(record.getSemester())
                         .category(record.getCategory().name())

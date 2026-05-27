@@ -3,6 +3,7 @@ package com.sscm.common.config;
 import com.sscm.auth.service.JwtTokenProvider;
 import com.sscm.auth.service.TokenBlacklistService;
 import com.sscm.common.crypto.EncryptionUtil;
+import com.sscm.common.tenant.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,24 +31,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String tokenHash = EncryptionUtil.sha256(token);
-            if (!tokenBlacklistService.isBlacklisted(tokenHash)) {
-                Long userId = jwtTokenProvider.getUserId(token);
-                String role = jwtTokenProvider.getRole(token);
+        try {
+            if (token != null && jwtTokenProvider.validateToken(token)) {
+                String tokenHash = EncryptionUtil.sha256(token);
+                if (!tokenBlacklistService.isBlacklisted(tokenHash)) {
+                    Long userId = jwtTokenProvider.getUserId(token);
+                    String role = jwtTokenProvider.getRole(token);
+                    Long schoolId = jwtTokenProvider.getSchoolId(token);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userId,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                            );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    if (schoolId != null) {
+                        TenantContext.setSchoolId(schoolId);
+                    }
+                }
             }
-        }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     private String extractToken(HttpServletRequest request) {

@@ -203,7 +203,8 @@ public class AuthService {
     }
 
     private TokenResponse issueTokens(User user) {
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole());
+        String accessToken = jwtTokenProvider.createAccessToken(
+                user.getId(), user.getEmail(), user.getRole(), user.getSchool().getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         Instant rtExpiresAt = Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration());

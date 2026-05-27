@@ -4,13 +4,16 @@ import com.sscm.admin.dto.*;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
 import com.sscm.common.entity.ClassRoom;
+import com.sscm.common.entity.School;
 import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.entity.TeacherAssignment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.common.repository.ClassRoomRepository;
+import com.sscm.common.repository.SchoolRepository;
 import com.sscm.common.repository.StudentEnrollmentRepository;
 import com.sscm.common.repository.TeacherAssignmentRepository;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.grade.entity.Subject;
 import com.sscm.grade.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +39,19 @@ public class AdminService {
     private final StudentEnrollmentRepository enrollmentRepository;
     private final TeacherAssignmentRepository assignmentRepository;
     private final SubjectRepository subjectRepository;
+    private final SchoolRepository schoolRepository;
+
+    private School getCurrentSchool() {
+        Long schoolId = TenantContext.requireSchoolId();
+        return schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SCHOOL_NOT_FOUND));
+    }
 
     // ─── 교사 관리 ────────────────────────────────────────────
 
     public Page<TeacherSummary> getTeachers(Pageable pageable) {
-        return teacherRepository.findAll(pageable)
+        Long schoolId = TenantContext.requireSchoolId();
+        return teacherRepository.findByUser_School_Id(schoolId, pageable)
                 .map(TeacherSummary::from);
     }
 
@@ -54,6 +65,7 @@ public class AdminService {
                 .name(req.getName())
                 .phone(req.getPhone())
                 .role(Role.TEACHER)
+                .school(getCurrentSchool())
                 .isActive(true)
                 .isActivated(false)
                 .createdAt(LocalDateTime.now())
@@ -73,7 +85,8 @@ public class AdminService {
     // ─── 학생 관리 ────────────────────────────────────────────
 
     public Page<StudentSummary> getStudents(Pageable pageable) {
-        return studentRepository.findAll(pageable).map(student -> {
+        Long schoolId = TenantContext.requireSchoolId();
+        return studentRepository.findByUser_School_Id(schoolId, pageable).map(student -> {
             int currentYear = LocalDateTime.now().getYear();
             StudentEnrollment enrollment = enrollmentRepository
                     .findByStudentAndAcademicYear(student, currentYear).orElse(null);
@@ -91,6 +104,7 @@ public class AdminService {
                 .name(req.getName())
                 .phone(req.getPhone())
                 .role(Role.STUDENT)
+                .school(getCurrentSchool())
                 .isActive(true)
                 .isActivated(false)
                 .createdAt(LocalDateTime.now())
@@ -110,7 +124,8 @@ public class AdminService {
     // ─── 학부모 관리 ──────────────────────────────────────────
 
     public Page<ParentSummary> getParents(Pageable pageable) {
-        return parentRepository.findAll(pageable).map(parent -> {
+        Long schoolId = TenantContext.requireSchoolId();
+        return parentRepository.findByUser_School_Id(schoolId, pageable).map(parent -> {
             List<ParentStudent> links = parentStudentRepository.findByParent(parent);
             return ParentSummary.from(parent, links);
         });
@@ -126,6 +141,7 @@ public class AdminService {
                 .name(req.getName())
                 .phone(req.getPhone())
                 .role(Role.PARENT)
+                .school(getCurrentSchool())
                 .isActive(true)
                 .isActivated(false)
                 .createdAt(LocalDateTime.now())
@@ -161,7 +177,8 @@ public class AdminService {
     // ─── 반 관리 ──────────────────────────────────────────────
 
     public List<ClassSummary> getClasses(int academicYear) {
-        List<ClassRoom> classes = classRoomRepository.findByAcademicYearWithTeacher(academicYear);
+        Long schoolId = TenantContext.requireSchoolId();
+        List<ClassRoom> classes = classRoomRepository.findBySchool_IdAndAcademicYear(schoolId, academicYear);
         return classes.stream().map(c -> {
             int count = enrollmentRepository.findByClassRoom(c).size();
             return ClassSummary.from(c, count);
@@ -179,6 +196,7 @@ public class AdminService {
                 .academicYear(req.getAcademicYear())
                 .grade(req.getGrade())
                 .classNum(req.getClassNum())
+                .school(getCurrentSchool())
                 .build();
         classRoomRepository.save(classRoom);
 

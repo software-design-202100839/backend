@@ -49,6 +49,10 @@ public enum ErrorCode {
     ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_008", "배정 정보를 찾을 수 없습니다"),
     PARENT_CHILD_DUPLICATE(HttpStatus.CONFLICT, "ADMIN_009", "이미 연결된 학부모-학생 관계입니다"),
 
+    // School / Tenant
+    SCHOOL_NOT_FOUND(HttpStatus.NOT_FOUND, "SCHOOL_001", "학교를 찾을 수 없습니다"),
+    SCHOOL_NOT_SET(HttpStatus.UNAUTHORIZED, "SCHOOL_002", "학교 정보가 설정되지 않았습니다"),
+
     // Common
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "COMMON_001", "유효성 검증에 실패했습니다"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "리소스를 찾을 수 없습니다"),

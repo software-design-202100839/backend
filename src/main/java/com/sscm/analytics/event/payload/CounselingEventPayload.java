@@ -22,6 +22,7 @@ public class CounselingEventPayload {
     private Long counselingId;
     private Long studentId;
     private Long teacherId;
+    private Long schoolId;
     private LocalDate counselDate;
     private String category;    // ACADEMIC, CAREER, BEHAVIOR, PERSONAL, OTHER
 }

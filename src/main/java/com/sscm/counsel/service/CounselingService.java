@@ -9,6 +9,7 @@ import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
 import com.sscm.analytics.event.CounselingChangedEvent;
 import com.sscm.analytics.event.payload.CounselingEventPayload;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.counsel.dto.CounselingRequest;
@@ -41,6 +42,9 @@ public class CounselingService {
     public CounselingResponse createCounseling(CounselingRequest request, Long currentUserId) {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        if (!student.getUser().getSchool().getId().equals(TenantContext.requireSchoolId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
         Teacher teacher = findTeacherByUserId(currentUserId);
 
         Counseling counseling = Counseling.builder()
@@ -149,6 +153,7 @@ public class CounselingService {
                         .counselingId(counseling.getId())
                         .studentId(counseling.getStudent().getId())
                         .teacherId(counseling.getTeacher().getId())
+                        .schoolId(TenantContext.getSchoolId())
                         .counselDate(counseling.getCounselDate())
                         .category(counseling.getCategory().name())
                         .build()));

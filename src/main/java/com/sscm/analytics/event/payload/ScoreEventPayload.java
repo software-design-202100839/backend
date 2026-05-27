@@ -23,6 +23,7 @@ public class ScoreEventPayload {
     private Long studentId;
     private Long subjectId;
     private Long teacherId;
+    private Long schoolId;
     private Integer year;
     private Integer semester;
     private BigDecimal score;

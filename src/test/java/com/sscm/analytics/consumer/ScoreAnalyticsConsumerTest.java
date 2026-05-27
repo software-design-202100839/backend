@@ -30,6 +30,7 @@ class ScoreAnalyticsConsumerTest {
         payload.put("subjectId", subjectId.intValue());
         payload.put("year", year);
         payload.put("semester", semester);
+        payload.put("schoolId", 1);
 
         return new AnalyticsEvent<>("SCORE_CREATED", java.time.LocalDateTime.now(), payload);
     }
@@ -41,9 +42,9 @@ class ScoreAnalyticsConsumerTest {
 
         consumer.consume(event);
 
-        verify(analyticsRepo).upsertStudentScoreSummary(5L, 2026, 1);
-        verify(analyticsRepo).upsertSubjectStatistics(1L, 2026, 1);
-        verify(analyticsRepo).upsertStudentDashboard(5L, 2026, 1);
+        verify(analyticsRepo).upsertStudentScoreSummary(5L, 2026, 1, 1L);
+        verify(analyticsRepo).upsertSubjectStatistics(1L, 2026, 1, 1L);
+        verify(analyticsRepo).upsertStudentDashboard(5L, 2026, 1, 1L);
     }
 
     @Test
@@ -51,11 +52,11 @@ class ScoreAnalyticsConsumerTest {
     void consume_exceptionDoesNotPropagate() {
         AnalyticsEvent<LinkedHashMap<String, Object>> event = createScoreEvent(5L, 1L, 2026, 1);
         doThrow(new RuntimeException("DB 연결 실패"))
-                .when(analyticsRepo).upsertStudentScoreSummary(anyLong(), anyInt(), anyInt());
+                .when(analyticsRepo).upsertStudentScoreSummary(anyLong(), anyInt(), anyInt(), anyLong());
 
         // 예외가 밖으로 전파되지 않아야 함 (Consumer 내부에서 catch)
         consumer.consume(event);
 
-        verify(analyticsRepo).upsertStudentScoreSummary(5L, 2026, 1);
+        verify(analyticsRepo).upsertStudentScoreSummary(5L, 2026, 1, 1L);
     }
 }

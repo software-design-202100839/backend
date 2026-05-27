@@ -7,6 +7,7 @@ import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -36,22 +37,36 @@ public class AnalyticsAccessChecker {
 
         switch (role) {
             case "ROLE_TEACHER", "ROLE_ADMIN" -> {
-                // 교사, 관리자: 모든 학생 조회 가능
+                // 교사, 관리자: 같은 학교 학생만 조회 가능
+                Long schoolId = TenantContext.requireSchoolId();
+                Student student = studentRepository.findById(studentId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+                if (!student.getUser().getSchool().getId().equals(schoolId)) {
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
             }
             case "ROLE_STUDENT" -> {
-                // 학생: 본인만
-                Student student = studentRepository.findByUser_Id(userId)
+                // 학생: 본인만 + 같은 학교 검증 (defense in depth)
+                Long studentSchoolId = TenantContext.requireSchoolId();
+                Student self = studentRepository.findByUser_Id(userId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
-                if (!student.getId().equals(studentId)) {
+                if (!self.getId().equals(studentId)) {
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
+                if (!self.getUser().getSchool().getId().equals(studentSchoolId)) {
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
             }
             case "ROLE_PARENT" -> {
-                // 학부모: 자녀만
+                // 학부모: 자녀만 + 같은 학교 검증 (defense in depth)
+                Long parentSchoolId = TenantContext.requireSchoolId();
                 Parent parent = parentRepository.findByUser_Id(userId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.ACCESS_DENIED));
                 Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+                if (!student.getUser().getSchool().getId().equals(parentSchoolId)) {
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 if (!parentStudentRepository.existsByParentAndStudent(parent, student)) {
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }

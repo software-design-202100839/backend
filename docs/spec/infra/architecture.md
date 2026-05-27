@@ -4,8 +4,9 @@
 
 > **변경 이력**
 > - 2026-04-09: ECS Fargate + ALB + Redis 구조
-> - 2026-04-20: EC2 + Nginx + Docker Compose로 전환. Redis 제거. SMS 알림 도입.
->   - 선택 이유: 단일 학교(~수백 명) 규모에서 ECS/ALB/Redis는 과잉 설계. 비용 1/3 절감, 운영 단순화.
+> - 2026-04-20: EC2 + Nginx + Docker Compose로 전환 (개발/테스트 환경). Redis 제거.
+>   - 비용 절감을 위한 로컬 개발 환경 단순화. 프로덕션은 ECS Fargate + ALB + Redis + MSK 풀 아키텍처 유지.
+> - 2026-05-26: AWS 풀 아키텍처 재배포 (다중 학교 SaaS 확장 전제). ECS + ALB + RDS x2 + Redis + MSK + CloudFront.
 
 ---
 

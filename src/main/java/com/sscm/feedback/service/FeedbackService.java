@@ -17,6 +17,7 @@ import com.sscm.feedback.entity.FeedbackCategory;
 import com.sscm.feedback.repository.FeedbackRepository;
 import com.sscm.analytics.event.FeedbackChangedEvent;
 import com.sscm.analytics.event.payload.FeedbackEventPayload;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -45,6 +46,9 @@ public class FeedbackService {
     public FeedbackResponse createFeedback(FeedbackRequest request, Long currentUserId) {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        if (!student.getUser().getSchool().getId().equals(TenantContext.requireSchoolId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
         Teacher teacher = findTeacherByUserId(currentUserId);
 
         Feedback feedback = Feedback.builder()
@@ -149,6 +153,7 @@ public class FeedbackService {
                         .feedbackId(feedback.getId())
                         .studentId(feedback.getStudent().getId())
                         .teacherId(feedback.getTeacher().getId())
+                        .schoolId(TenantContext.getSchoolId())
                         .year(feedback.getYear())
                         .semester(feedback.getSemester())
                         .category(feedback.getCategory().name())

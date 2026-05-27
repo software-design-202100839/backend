@@ -3,6 +3,7 @@ package com.sscm.auth.service;
 import com.sscm.auth.dto.*;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +61,10 @@ class AuthServiceTest {
     // 헬퍼
     // ----------------------------------------------------------------
 
+    private School testSchool() {
+        return School.builder().id(1L).name("테스트학교").code("TEST").build();
+    }
+
     private void setId(Object target, String field, Long id) {
         try {
             Field f = target.getClass().getDeclaredField(field);
@@ -76,6 +81,7 @@ class AuthServiceTest {
                 .role(Role.TEACHER)
                 .isActive(true)
                 .isActivated(true)
+                .school(testSchool())
                 .build();
         setId(user, "id", 1L);
         return user;
@@ -87,6 +93,7 @@ class AuthServiceTest {
                 .role(Role.STUDENT)
                 .isActive(false)
                 .isActivated(true)
+                .school(testSchool())
                 .build();
         setId(user, "id", 2L);
         return user;
@@ -98,6 +105,7 @@ class AuthServiceTest {
                 .role(Role.STUDENT)
                 .isActive(true)
                 .isActivated(false)
+                .school(testSchool())
                 .build();
     }
 
@@ -425,7 +433,7 @@ class AuthServiceTest {
             User user = activatedTeacher();
             given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(any(), any())).willReturn(true);
-            given(jwtTokenProvider.createAccessToken(any(), any(), any())).willReturn("at-value");
+            given(jwtTokenProvider.createAccessToken(any(), any(), any(), any())).willReturn("at-value");
             given(jwtTokenProvider.createRefreshToken(any())).willReturn("rt-value");
             given(jwtTokenProvider.getRefreshTokenExpiration()).willReturn(604800000L);
             given(jwtTokenProvider.getAccessTokenExpiration()).willReturn(1800000L);
@@ -481,6 +489,7 @@ class AuthServiceTest {
                     .name("이교사").role(Role.TEACHER)
                     .isActive(true).isActivated(true)
                     .loginLockedUntil(Instant.now().plusSeconds(600))
+                    .school(testSchool())
                     .build();
             setId(user, "id", 1L);
             given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
@@ -545,7 +554,7 @@ class AuthServiceTest {
             given(jwtTokenProvider.validateToken("valid-rt")).willReturn(true);
             given(refreshTokenService.findByTokenHash(any())).willReturn(Optional.of(storedRt));
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
-            given(jwtTokenProvider.createAccessToken(any(), any(), any())).willReturn("new-at");
+            given(jwtTokenProvider.createAccessToken(any(), any(), any(), any())).willReturn("new-at");
             given(jwtTokenProvider.createRefreshToken(any())).willReturn("new-rt");
             given(jwtTokenProvider.getRefreshTokenExpiration()).willReturn(604800000L);
             given(jwtTokenProvider.getAccessTokenExpiration()).willReturn(1800000L);
@@ -675,7 +684,7 @@ class AuthServiceTest {
         void getMeStudent() {
             User user = User.builder()
                     .name("이학생").role(Role.STUDENT)
-                    .isActive(true).isActivated(true).build();
+                    .isActive(true).isActivated(true).school(testSchool()).build();
             setId(user, "id", 2L);
 
             Student student = Student.builder().user(user).build();
@@ -706,7 +715,7 @@ class AuthServiceTest {
         void getMeParent() {
             User parentUser = User.builder()
                     .name("이학부모").role(Role.PARENT)
-                    .isActive(true).isActivated(true).build();
+                    .isActive(true).isActivated(true).school(testSchool()).build();
             setId(parentUser, "id", 3L);
 
             Parent parent = Parent.builder().user(parentUser).build();

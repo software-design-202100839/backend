@@ -65,6 +65,7 @@ class KafkaIntegrationTest {
         payload.put("subjectId", 1);
         payload.put("year", 2026);
         payload.put("semester", 1);
+        payload.put("schoolId", 1);
 
         AnalyticsEvent<LinkedHashMap<String, Object>> event =
                 new AnalyticsEvent<>("SCORE_CREATED", LocalDateTime.now(), payload);
@@ -72,9 +73,9 @@ class KafkaIntegrationTest {
         kafkaTemplate.send(KafkaConfig.TOPIC_SCORES, "5", event);
 
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            verify(analyticsRepo, atLeastOnce()).upsertStudentScoreSummary(5L, 2026, 1);
-            verify(analyticsRepo, atLeastOnce()).upsertSubjectStatistics(1L, 2026, 1);
-            verify(analyticsRepo, atLeastOnce()).upsertStudentDashboard(5L, 2026, 1);
+            verify(analyticsRepo, atLeastOnce()).upsertStudentScoreSummary(5L, 2026, 1, 1L);
+            verify(analyticsRepo, atLeastOnce()).upsertSubjectStatistics(1L, 2026, 1, 1L);
+            verify(analyticsRepo, atLeastOnce()).upsertStudentDashboard(5L, 2026, 1, 1L);
         });
     }
 }

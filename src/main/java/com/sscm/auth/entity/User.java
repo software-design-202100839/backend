@@ -1,5 +1,6 @@
 package com.sscm.auth.entity;
 
+import com.sscm.common.entity.School;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Duration;
@@ -33,6 +34,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_id", nullable = false)
+    private School school;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

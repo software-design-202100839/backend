@@ -17,6 +17,7 @@ import com.sscm.grade.repository.ScoreRepository;
 import com.sscm.grade.repository.SubjectRepository;
 import com.sscm.analytics.event.ScoreChangedEvent;
 import com.sscm.analytics.event.payload.ScoreEventPayload;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.notification.entity.NotificationReferenceType;
 import com.sscm.notification.entity.NotificationType;
 import com.sscm.notification.event.NotificationEvent;
@@ -49,6 +50,9 @@ public class ScoreService {
     public ScoreResponse createScore(ScoreRequest request, Long currentUserId) {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.STUDENT_NOT_FOUND));
+        if (!student.getUser().getSchool().getId().equals(TenantContext.requireSchoolId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SUBJECT_NOT_FOUND));
         Teacher teacher = findTeacherByUserId(currentUserId);
@@ -209,6 +213,7 @@ public class ScoreService {
                         .studentId(score.getStudent().getId())
                         .subjectId(score.getSubject().getId())
                         .teacherId(score.getTeacher().getId())
+                        .schoolId(TenantContext.getSchoolId())
                         .year(score.getYear())
                         .semester(score.getSemester())
                         .score(score.getScore())

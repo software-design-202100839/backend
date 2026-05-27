@@ -3,9 +3,11 @@ package com.sscm.admin.controller;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
 import com.sscm.common.entity.ClassRoom;
+import com.sscm.common.entity.School;
 import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.entity.TeacherAssignment;
 import com.sscm.common.repository.ClassRoomRepository;
+import com.sscm.common.repository.SchoolRepository;
 import com.sscm.common.repository.StudentEnrollmentRepository;
 import com.sscm.common.repository.TeacherAssignmentRepository;
 import com.sscm.common.response.ApiResponse;
@@ -70,6 +72,11 @@ public class DevSeedController {
     private static final String STUDENT_PASSWORD = "student1234";
     private static final String PARENT_PASSWORD  = "parent1234";
 
+    private static final String SCHOOL1_CODE = "HANBIT";
+    private static final String SCHOOL1_NAME = "한빛중학교";
+    private static final String SCHOOL2_CODE = "SAEBYEOL";
+    private static final String SCHOOL2_NAME = "새별중학교";
+
     @Value("${dev.seed.admin.password}")
     private String adminPassword;
 
@@ -87,13 +94,15 @@ public class DevSeedController {
     private final CounselingRepository        counselingRepository;
     private final TeacherAssignmentRepository assignmentRepository;
     private final ApplicationEventPublisher   eventPublisher;
+    private final SchoolRepository            schoolRepository;
 
     // ── ADMIN 단독 시드 (기존 호환) ───────────────────────────
 
     @Operation(summary = "[DEV] ADMIN 계정 생성/초기화")
     @PostMapping("/seed/admin")
     public ResponseEntity<ApiResponse<SeedResult>> seedAdmin() {
-        User admin = upsertUser(ADMIN_EMAIL, ADMIN_PHONE, "관리자", adminPassword, Role.ADMIN);
+        School school = getOrCreateSchool("ADMIN", "시스템관리");
+        User admin = upsertUser(ADMIN_EMAIL, ADMIN_PHONE, "관리자", adminPassword, Role.ADMIN, school);
         log.info("[DEV SEED] ADMIN: {}", ADMIN_EMAIL);
         return ResponseEntity.ok(ApiResponse.success(
                 new SeedResult("ADMIN", ADMIN_EMAIL, adminPassword, admin.getId())));
@@ -106,27 +115,28 @@ public class DevSeedController {
     @PostMapping("/seed/all")
     public ResponseEntity<ApiResponse<SeedAllResult>> seedAll() {
         List<SeedResult> results = new ArrayList<>();
+        School school = getOrCreateSchool(SCHOOL1_CODE, SCHOOL1_NAME);
 
         // 1. ADMIN
-        User adminUser = upsertUser(ADMIN_EMAIL, ADMIN_PHONE, "관리자", adminPassword, Role.ADMIN);
+        User adminUser = upsertUser(ADMIN_EMAIL, ADMIN_PHONE, "관리자", adminPassword, Role.ADMIN, school);
         results.add(new SeedResult("ADMIN", ADMIN_EMAIL, adminPassword, adminUser.getId()));
 
         // 2. TEACHER
-        User teacherUser = upsertUser(TEACHER_EMAIL, TEACHER_PHONE, "테스트교사", TEACHER_PASSWORD, Role.TEACHER);
+        User teacherUser = upsertUser(TEACHER_EMAIL, TEACHER_PHONE, "테스트교사", TEACHER_PASSWORD, Role.TEACHER, school);
         Teacher teacher = teacherRepository.findByUser(teacherUser)
                 .orElseGet(() -> teacherRepository.save(
                         Teacher.builder().user(teacherUser).department("테스트학과").build()));
         results.add(new SeedResult("TEACHER", TEACHER_EMAIL, TEACHER_PASSWORD, teacherUser.getId()));
 
         // 3. STUDENT
-        User studentUser = upsertUser(STUDENT_EMAIL, STUDENT_PHONE, "테스트학생", STUDENT_PASSWORD, Role.STUDENT);
+        User studentUser = upsertUser(STUDENT_EMAIL, STUDENT_PHONE, "테스트학생", STUDENT_PASSWORD, Role.STUDENT, school);
         Student student = studentRepository.findByUser(studentUser)
                 .orElseGet(() -> studentRepository.save(
                         Student.builder().user(studentUser).admissionYear(2026).build()));
         results.add(new SeedResult("STUDENT", STUDENT_EMAIL, STUDENT_PASSWORD, studentUser.getId()));
 
         // 4. PARENT
-        User parentUser = upsertUser(PARENT_EMAIL, PARENT_PHONE, "테스트학부모", PARENT_PASSWORD, Role.PARENT);
+        User parentUser = upsertUser(PARENT_EMAIL, PARENT_PHONE, "테스트학부모", PARENT_PASSWORD, Role.PARENT, school);
         Parent parent = parentRepository.findByUser(parentUser)
                 .orElseGet(() -> parentRepository.save(
                         Parent.builder().user(parentUser).build()));
@@ -136,7 +146,7 @@ public class DevSeedController {
         ClassRoom classRoom = classRoomRepository
                 .findByAcademicYearAndGradeAndClassNum(2026, 1, 1)
                 .orElseGet(() -> classRoomRepository.save(
-                        ClassRoom.builder().academicYear(2026).grade(1).classNum(1).build()));
+                        ClassRoom.builder().academicYear(2026).grade(1).classNum(1).school(school).build()));
 
         // 담임 배정
         classRoom.assignHomeroom(teacher);
@@ -205,6 +215,7 @@ public class DevSeedController {
         log.info("[BULK SEED] 과목 {} 개 준비 완료", subjects.size());
 
         // 4. 학생 30명 생성
+        School school = teacherUser.getSchool();
         java.util.List<Student> students = new java.util.ArrayList<>();
         String pwHash = passwordEncoder.encode("student1234");
         for (int i = 1; i <= 30; i++) {
@@ -222,6 +233,7 @@ public class DevSeedController {
                             .orElseGet(() -> userRepository.save(User.builder()
                                     .name("학생" + idx).email(email).phone(phone)
                                     .passwordHash(pwHash).role(Role.STUDENT)
+                                    .school(school)
                                     .isActive(true).isActivated(true)
                                     .createdAt(java.time.LocalDateTime.now())
                                     .updatedAt(java.time.LocalDateTime.now())
@@ -302,9 +314,59 @@ public class DevSeedController {
         return ApiResponse.success(summary);
     }
 
+    // ── 새별중학교 시드 (멀티테넌시 데모용) ─────────────────────
+
+    @Operation(summary = "[DEV] 새별중학교 시드 데이터 생성",
+               description = "새별중학교(School 2) 교사/학생/반 구성. 멀티테넌시 격리 데모용.")
+    @PostMapping("/seed/school2")
+    public ResponseEntity<ApiResponse<SeedAllResult>> seedSchool2() {
+        School school = getOrCreateSchool(SCHOOL2_CODE, SCHOOL2_NAME);
+        List<SeedResult> results = new ArrayList<>();
+
+        // 1. TEACHER for school 2
+        User teacherUser2 = upsertUser("teacher2@sscm.dev", "010-1111-0002", "새별교사", TEACHER_PASSWORD, Role.TEACHER, school);
+        Teacher teacher2 = teacherRepository.findByUser(teacherUser2)
+                .orElseGet(() -> teacherRepository.save(
+                        Teacher.builder().user(teacherUser2).department("새별학과").build()));
+        results.add(new SeedResult("TEACHER", "teacher2@sscm.dev", TEACHER_PASSWORD, teacherUser2.getId()));
+
+        // 2. STUDENT for school 2
+        User studentUser2 = upsertUser("student-sb@sscm.dev", "010-2222-0002", "새별학생", STUDENT_PASSWORD, Role.STUDENT, school);
+        Student student2 = studentRepository.findByUser(studentUser2)
+                .orElseGet(() -> studentRepository.save(
+                        Student.builder().user(studentUser2).admissionYear(2026).build()));
+        results.add(new SeedResult("STUDENT", "student-sb@sscm.dev", STUDENT_PASSWORD, studentUser2.getId()));
+
+        // 3. 반 구성 (2026년 1학년 2반 — school1의 1반과 충돌 방지)
+        ClassRoom classRoom2 = classRoomRepository
+                .findByAcademicYearAndGradeAndClassNum(2026, 1, 2)
+                .orElseGet(() -> classRoomRepository.save(
+                        ClassRoom.builder().academicYear(2026).grade(1).classNum(2).school(school).build()));
+
+        // 담임 배정
+        classRoom2.assignHomeroom(teacher2);
+        classRoomRepository.save(classRoom2);
+
+        // 학생 배정
+        if (!enrollmentRepository.existsByStudentAndAcademicYear(student2, 2026)) {
+            enrollmentRepository.save(StudentEnrollment.builder()
+                    .student(student2).classRoom(classRoom2).academicYear(2026).studentNum(1).build());
+        }
+
+        log.info("[DEV SEED] 새별중학교 시드 완료");
+        return ResponseEntity.ok(ApiResponse.success(new SeedAllResult(results,
+                "새별중학교 — 교사: 새별교사, 학생: 새별학생, 1학년 2반 구성 완료")));
+    }
+
     // ── 내부 헬퍼 ─────────────────────────────────────────────
 
-    private User upsertUser(String email, String phone, String name, String password, Role role) {
+    private School getOrCreateSchool(String code, String name) {
+        return schoolRepository.findByCode(code)
+                .orElseGet(() -> schoolRepository.save(
+                        School.builder().name(name).code(code).build()));
+    }
+
+    private User upsertUser(String email, String phone, String name, String password, Role role, School school) {
         String pwHash = passwordEncoder.encode(password);
 
         return userRepository.findByEmail(email).map(user -> {
@@ -323,6 +385,7 @@ public class DevSeedController {
                     .phone(phone)
                     .passwordHash(pwHash)
                     .role(role)
+                    .school(school)
                     .isActive(true)
                     .isActivated(true)
                     .createdAt(LocalDateTime.now())

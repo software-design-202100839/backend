@@ -31,11 +31,12 @@ public class RecordAnalyticsConsumer {
 
             var payload = event.getPayload();
             Long studentId = toLong(payload.get("studentId"));
+            Long schoolId = toLong(payload.get("schoolId"));
             Integer year = (Integer) payload.get("year");
             Integer semester = (Integer) payload.get("semester");
 
-            analyticsRepo.upsertStudentAttendanceSummary(studentId, year, semester);
-            analyticsRepo.upsertStudentDashboard(studentId, year, semester);
+            analyticsRepo.upsertStudentAttendanceSummary(studentId, year, semester, schoolId);
+            analyticsRepo.upsertStudentDashboard(studentId, year, semester, schoolId);
 
             log.info("학생부 분석 완료: studentId={}", studentId);
         } catch (Exception e) {

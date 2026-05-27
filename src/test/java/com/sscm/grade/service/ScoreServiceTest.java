@@ -7,14 +7,17 @@ import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.common.service.AuditLogService;
 import com.sscm.grade.dto.*;
 import com.sscm.grade.entity.Score;
 import com.sscm.grade.entity.Subject;
 import com.sscm.grade.repository.ScoreRepository;
 import com.sscm.grade.repository.SubjectRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,6 +56,8 @@ class ScoreServiceTest {
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private io.micrometer.core.instrument.Counter scoreCreateCounter;
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
     private User teacherUser;
     private Teacher teacher;
     private User studentUser;
@@ -61,13 +66,20 @@ class ScoreServiceTest {
 
     @BeforeEach
     void setUp() {
-        teacherUser = User.builder().id(1L).name("김교사").build();
+        TenantContext.setSchoolId(1L);
+
+        teacherUser = User.builder().id(1L).name("김교사").school(testSchool).build();
         teacher = Teacher.builder().id(1L).user(teacherUser).department("수학").build();
 
-        studentUser = User.builder().id(2L).name("이학생").build();
+        studentUser = User.builder().id(2L).name("이학생").school(testSchool).build();
         student = Student.builder().id(1L).user(studentUser).admissionYear(2024).build();
 
         subject = Subject.builder().id(1L).name("수학").code("MATH101").build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     private ScoreRequest makeRequest(Long studentId, Long subjectId, Integer year, Integer semester, BigDecimal score) {

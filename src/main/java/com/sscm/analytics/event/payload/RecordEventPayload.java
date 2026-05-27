@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class RecordEventPayload {
     private Long recordId;
     private Long studentId;
+    private Long schoolId;
     private Integer year;
     private Integer semester;
     private String category;    // ATTENDANCE, GENERAL_OPINION, AWARD, VOLUNTEER, SPECIAL_NOTE, OTHER

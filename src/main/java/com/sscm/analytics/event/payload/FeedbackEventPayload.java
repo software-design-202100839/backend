@@ -19,6 +19,7 @@ public class FeedbackEventPayload {
     private Long feedbackId;
     private Long studentId;
     private Long teacherId;
+    private Long schoolId;
     private Integer year;
     private Integer semester;
     private String category;    // ACADEMIC, BEHAVIOR, ATTENDANCE, ATTITUDE, GENERAL

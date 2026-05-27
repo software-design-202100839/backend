@@ -6,14 +6,17 @@ import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.TeacherRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.counsel.dto.CounselingRequest;
 import com.sscm.counsel.dto.CounselingResponse;
 import com.sscm.counsel.dto.CounselingUpdateRequest;
 import com.sscm.counsel.entity.CounselCategory;
 import com.sscm.counsel.entity.Counseling;
 import com.sscm.counsel.repository.CounselingRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -60,6 +63,8 @@ class CounselingServiceTest {
 
     // ── 공통 픽스처 ──────────────────────────────────────────────────────────
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
     private User teacherUser;
     private Teacher teacher;
     private User studentUser;
@@ -68,10 +73,12 @@ class CounselingServiceTest {
 
     @BeforeEach
     void setUp() {
-        teacherUser = User.builder().id(1L).name("김선생").build();
+        TenantContext.setSchoolId(1L);
+
+        teacherUser = User.builder().id(1L).name("김선생").school(testSchool).build();
         teacher = Teacher.builder().id(1L).user(teacherUser).build();
 
-        studentUser = User.builder().id(10L).name("이학생").build();
+        studentUser = User.builder().id(10L).name("이학생").school(testSchool).build();
         student = Student.builder().id(10L).user(studentUser).admissionYear(2024).build();
 
         counseling = Counseling.builder()
@@ -84,6 +91,11 @@ class CounselingServiceTest {
                 .nextPlan("다음 상담 계획")
                 .nextCounselDate(LocalDate.of(2026, 4, 28))
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     private CounselingRequest buildCreateRequest(Long studentId) {
@@ -219,7 +231,7 @@ class CounselingServiceTest {
         @Test
         @DisplayName("다른 교사가 수정 시도 → ACCESS_DENIED")
         void accessDenied() {
-            User otherUser = User.builder().id(2L).name("박선생").build();
+            User otherUser = User.builder().id(2L).name("박선생").school(testSchool).build();
             Teacher otherTeacher = Teacher.builder().id(2L).user(otherUser).build();
 
             given(counselingRepository.findByIdWithDetails(1L)).willReturn(Optional.of(counseling));

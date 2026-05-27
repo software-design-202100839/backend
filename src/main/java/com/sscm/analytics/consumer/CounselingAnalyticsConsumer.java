@@ -31,14 +31,15 @@ public class CounselingAnalyticsConsumer {
 
             var payload = event.getPayload();
             Long studentId = toLong(payload.get("studentId"));
+            Long schoolId = toLong(payload.get("schoolId"));
             // 상담은 year/semester가 payload에 없으므로 counselDate에서 추출
             String counselDateStr = (String) payload.get("counselDate");
             var counselDate = java.time.LocalDate.parse(counselDateStr);
             int year = counselDate.getYear();
             int semester = counselDate.getMonthValue() <= 8 ? 1 : 2;
 
-            analyticsRepo.upsertStudentCounselingSummary(studentId, year, semester);
-            analyticsRepo.upsertStudentDashboard(studentId, year, semester);
+            analyticsRepo.upsertStudentCounselingSummary(studentId, year, semester, schoolId);
+            analyticsRepo.upsertStudentDashboard(studentId, year, semester, schoolId);
 
             log.info("상담 분석 완료: studentId={}", studentId);
         } catch (Exception e) {

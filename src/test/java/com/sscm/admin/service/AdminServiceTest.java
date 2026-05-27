@@ -4,15 +4,19 @@ import com.sscm.admin.dto.*;
 import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
 import com.sscm.common.entity.ClassRoom;
+import com.sscm.common.entity.School;
 import com.sscm.common.entity.StudentEnrollment;
 import com.sscm.common.entity.TeacherAssignment;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.common.repository.ClassRoomRepository;
+import com.sscm.common.repository.SchoolRepository;
 import com.sscm.common.repository.StudentEnrollmentRepository;
 import com.sscm.common.repository.TeacherAssignmentRepository;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.grade.entity.Subject;
 import com.sscm.grade.repository.SubjectRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -53,6 +58,9 @@ class AdminServiceTest {
     @Mock private StudentEnrollmentRepository enrollmentRepository;
     @Mock private TeacherAssignmentRepository assignmentRepository;
     @Mock private SubjectRepository subjectRepository;
+    @Mock private SchoolRepository schoolRepository;
+
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
 
     private User teacherUser;
     private Teacher teacher;
@@ -65,21 +73,28 @@ class AdminServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setSchoolId(1L);
+
         teacherUser = User.builder().id(1L).name("김교사").phone("01011112222")
-                .role(Role.TEACHER).isActive(true).isActivated(false).build();
+                .role(Role.TEACHER).isActive(true).isActivated(false).school(testSchool).build();
         teacher = Teacher.builder().id(1L).user(teacherUser).department("수학").build();
 
         studentUser = User.builder().id(2L).name("이학생").phone("01033334444")
-                .role(Role.STUDENT).isActive(true).isActivated(false).build();
+                .role(Role.STUDENT).isActive(true).isActivated(false).school(testSchool).build();
         student = Student.builder().id(1L).user(studentUser).admissionYear(2024).build();
 
         parentUser = User.builder().id(3L).name("박학부모").phone("01055556666")
-                .role(Role.PARENT).isActive(true).isActivated(false).build();
+                .role(Role.PARENT).isActive(true).isActivated(false).school(testSchool).build();
         parent = Parent.builder().id(1L).user(parentUser).build();
 
         classRoom = ClassRoom.builder().id(1L).academicYear(2024).grade(2).classNum(3).build();
 
         subject = Subject.builder().id(1L).name("수학").code("MATH101").build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -94,7 +109,7 @@ class AdminServiceTest {
         @DisplayName("교사 목록 조회")
         void getTeachers() {
             Pageable pageable = PageRequest.of(0, 10);
-            given(teacherRepository.findAll(pageable))
+            given(teacherRepository.findByUser_School_Id(eq(1L), any(Pageable.class)))
                     .willReturn(new PageImpl<>(List.of(teacher)));
 
             Page<TeacherSummary> result = adminService.getTeachers(pageable);
@@ -112,6 +127,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "department", "영어");
 
             given(userRepository.existsByPhone(anyString())).willReturn(false);
+            given(schoolRepository.findById(1L)).willReturn(Optional.of(testSchool));
             given(userRepository.save(any(User.class))).willReturn(teacherUser);
             given(teacherRepository.save(any(Teacher.class))).willReturn(teacher);
 
@@ -150,7 +166,7 @@ class AdminServiceTest {
         @DisplayName("학생 목록 조회")
         void getStudents() {
             Pageable pageable = PageRequest.of(0, 10);
-            given(studentRepository.findAll(pageable))
+            given(studentRepository.findByUser_School_Id(eq(1L), any(Pageable.class)))
                     .willReturn(new PageImpl<>(List.of(student)));
             given(enrollmentRepository.findByStudentAndAcademicYear(any(), any(Integer.class)))
                     .willReturn(Optional.empty());
@@ -169,6 +185,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "admissionYear", 2025);
 
             given(userRepository.existsByPhone(anyString())).willReturn(false);
+            given(schoolRepository.findById(1L)).willReturn(Optional.of(testSchool));
             given(userRepository.save(any(User.class))).willReturn(studentUser);
             given(studentRepository.save(any(Student.class))).willReturn(student);
 
@@ -206,7 +223,7 @@ class AdminServiceTest {
         @DisplayName("학부모 목록 조회")
         void getParents() {
             Pageable pageable = PageRequest.of(0, 10);
-            given(parentRepository.findAll(pageable))
+            given(parentRepository.findByUser_School_Id(eq(1L), any(Pageable.class)))
                     .willReturn(new PageImpl<>(List.of(parent)));
             given(parentStudentRepository.findByParent(parent)).willReturn(List.of());
 
@@ -223,6 +240,7 @@ class AdminServiceTest {
             ReflectionTestUtils.setField(req, "phone", "01088887777");
 
             given(userRepository.existsByPhone(anyString())).willReturn(false);
+            given(schoolRepository.findById(1L)).willReturn(Optional.of(testSchool));
             given(userRepository.save(any(User.class))).willReturn(parentUser);
             given(parentRepository.save(any(Parent.class))).willReturn(parent);
 
@@ -319,7 +337,7 @@ class AdminServiceTest {
         @Test
         @DisplayName("반 목록 조회")
         void getClasses() {
-            given(classRoomRepository.findByAcademicYearWithTeacher(2024)).willReturn(List.of(classRoom));
+            given(classRoomRepository.findBySchool_IdAndAcademicYear(1L, 2024)).willReturn(List.of(classRoom));
             given(enrollmentRepository.findByClassRoom(classRoom)).willReturn(List.of());
 
             List<ClassSummary> result = adminService.getClasses(2024);
@@ -337,6 +355,7 @@ class AdminServiceTest {
 
             given(classRoomRepository.existsByAcademicYearAndGradeAndClassNum(2024, 2, 4))
                     .willReturn(false);
+            given(schoolRepository.findById(1L)).willReturn(Optional.of(testSchool));
             given(classRoomRepository.save(any(ClassRoom.class))).willReturn(classRoom);
 
             ClassSummary result = adminService.createClass(req);

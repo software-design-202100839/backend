@@ -88,6 +88,31 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref GrafanaTargetGroup
 
+  # Grafana가 CloudWatch 인프라 메트릭을 조회하기 위한 TaskRole
+  MonitoringTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sscm-monitoring-task-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: cloudwatch-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:DescribeAlarms
+                Resource: '*'
+
   # Task Definition
   MonitoringTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -99,6 +124,7 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       ExecutionRoleArn: !ImportValue sscm-ecs-execution-role-arn
+      TaskRoleArn: !GetAtt MonitoringTaskRole.Arn
       ContainerDefinitions:
         - Name: prometheus
           Image: !Ref PrometheusImage

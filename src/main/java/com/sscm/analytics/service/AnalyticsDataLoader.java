@@ -49,26 +49,38 @@ public class AnalyticsDataLoader {
     }
 
     private void backfillScores() {
-        // 운영 DB에서 성적이 있는 학생+학기+과목 조합 조회
+        // 운영 DB에서 성적이 있는 학생+학기 조합 + school_id 조회
         List<Map<String, Object>> studentSemesters = primaryJdbc.queryForList(
-                "SELECT DISTINCT student_id, year, semester FROM scores");
+                """
+                SELECT DISTINCT sc.student_id, sc.year, sc.semester, u.school_id
+                FROM scores sc
+                JOIN students s ON sc.student_id = s.id
+                JOIN users u ON s.user_id = u.id
+                """);
 
         for (var row : studentSemesters) {
             Long studentId = ((Number) row.get("student_id")).longValue();
             Integer year = (Integer) row.get("year");
             Integer semester = (Integer) row.get("semester");
-            analyticsRepo.upsertStudentScoreSummary(studentId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertStudentScoreSummary(studentId, year, semester, schoolId);
         }
 
-        // 과목별 통계
+        // 과목별 통계 (school_id는 과목을 수강하는 학생의 학교 기준)
         List<Map<String, Object>> subjectSemesters = primaryJdbc.queryForList(
-                "SELECT DISTINCT subject_id, year, semester FROM scores");
+                """
+                SELECT DISTINCT sc.subject_id, sc.year, sc.semester, u.school_id
+                FROM scores sc
+                JOIN students s ON sc.student_id = s.id
+                JOIN users u ON s.user_id = u.id
+                """);
 
         for (var row : subjectSemesters) {
             Long subjectId = ((Number) row.get("subject_id")).longValue();
             Integer year = (Integer) row.get("year");
             Integer semester = (Integer) row.get("semester");
-            analyticsRepo.upsertSubjectStatistics(subjectId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertSubjectStatistics(subjectId, year, semester, schoolId);
         }
 
         log.info("성적 backfill 완료: {} 건", studentSemesters.size());
@@ -76,13 +88,19 @@ public class AnalyticsDataLoader {
 
     private void backfillAttendance() {
         List<Map<String, Object>> rows = primaryJdbc.queryForList(
-                "SELECT DISTINCT student_id, year, semester FROM student_records");
+                """
+                SELECT DISTINCT sr.student_id, sr.year, sr.semester, u.school_id
+                FROM student_records sr
+                JOIN students s ON sr.student_id = s.id
+                JOIN users u ON s.user_id = u.id
+                """);
 
         for (var row : rows) {
             Long studentId = ((Number) row.get("student_id")).longValue();
             Integer year = (Integer) row.get("year");
             Integer semester = (Integer) row.get("semester");
-            analyticsRepo.upsertStudentAttendanceSummary(studentId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertStudentAttendanceSummary(studentId, year, semester, schoolId);
         }
 
         log.info("기록 backfill 완료: {} 건", rows.size());
@@ -90,13 +108,19 @@ public class AnalyticsDataLoader {
 
     private void backfillFeedbacks() {
         List<Map<String, Object>> rows = primaryJdbc.queryForList(
-                "SELECT DISTINCT student_id, year, semester FROM feedbacks");
+                """
+                SELECT DISTINCT f.student_id, f.year, f.semester, u.school_id
+                FROM feedbacks f
+                JOIN students s ON f.student_id = s.id
+                JOIN users u ON s.user_id = u.id
+                """);
 
         for (var row : rows) {
             Long studentId = ((Number) row.get("student_id")).longValue();
             Integer year = (Integer) row.get("year");
             Integer semester = (Integer) row.get("semester");
-            analyticsRepo.upsertStudentFeedbackSummary(studentId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertStudentFeedbackSummary(studentId, year, semester, schoolId);
         }
 
         log.info("피드백 backfill 완료: {} 건", rows.size());
@@ -106,38 +130,48 @@ public class AnalyticsDataLoader {
         // 상담은 year/semester가 없으므로 counsel_date에서 추출
         List<Map<String, Object>> rows = primaryJdbc.queryForList(
                 """
-                SELECT DISTINCT student_id,
-                       EXTRACT(YEAR FROM counsel_date)::int AS year,
-                       CASE WHEN EXTRACT(MONTH FROM counsel_date) <= 8 THEN 1 ELSE 2 END AS semester
-                FROM counselings
+                SELECT DISTINCT c.student_id,
+                       EXTRACT(YEAR FROM c.counsel_date)::int AS year,
+                       CASE WHEN EXTRACT(MONTH FROM c.counsel_date) <= 8 THEN 1 ELSE 2 END AS semester,
+                       u.school_id
+                FROM counselings c
+                JOIN students s ON c.student_id = s.id
+                JOIN users u ON s.user_id = u.id
                 """);
 
         for (var row : rows) {
             Long studentId = ((Number) row.get("student_id")).longValue();
             Integer year = ((Number) row.get("year")).intValue();
             Integer semester = ((Number) row.get("semester")).intValue();
-            analyticsRepo.upsertStudentCounselingSummary(studentId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertStudentCounselingSummary(studentId, year, semester, schoolId);
         }
 
         log.info("상담 backfill 완료: {} 건", rows.size());
     }
 
     private void backfillDashboards() {
-        // 모든 학생+학기 조합 (성적 기준)
+        // 모든 학생+학기 조합 + school_id (성적/기록/피드백 기준)
         List<Map<String, Object>> rows = primaryJdbc.queryForList(
                 """
-                SELECT DISTINCT student_id, year, semester FROM scores
-                UNION
-                SELECT DISTINCT student_id, year, semester FROM student_records
-                UNION
-                SELECT DISTINCT student_id, year, semester FROM feedbacks
+                SELECT DISTINCT t.student_id, t.year, t.semester, u.school_id
+                FROM (
+                    SELECT student_id, year, semester FROM scores
+                    UNION
+                    SELECT student_id, year, semester FROM student_records
+                    UNION
+                    SELECT student_id, year, semester FROM feedbacks
+                ) t
+                JOIN students s ON t.student_id = s.id
+                JOIN users u ON s.user_id = u.id
                 """);
 
         for (var row : rows) {
             Long studentId = ((Number) row.get("student_id")).longValue();
             Integer year = (Integer) row.get("year");
             Integer semester = (Integer) row.get("semester");
-            analyticsRepo.upsertStudentDashboard(studentId, year, semester);
+            Long schoolId = row.get("school_id") != null ? ((Number) row.get("school_id")).longValue() : null;
+            analyticsRepo.upsertStudentDashboard(studentId, year, semester, schoolId);
         }
 
         log.info("대시보드 backfill 완료: {} 건", rows.size());

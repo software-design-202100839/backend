@@ -37,15 +37,16 @@ public class ScoreAnalyticsConsumer {
             var payload = event.getPayload();
             Long studentId = toLong(payload.get("studentId"));
             Long subjectId = toLong(payload.get("subjectId"));
+            Long schoolId = toLong(payload.get("schoolId"));
             Integer year = (Integer) payload.get("year");
             Integer semester = (Integer) payload.get("semester");
 
             // 학생 성적 요약 재집계
-            analyticsRepo.upsertStudentScoreSummary(studentId, year, semester);
+            analyticsRepo.upsertStudentScoreSummary(studentId, year, semester, schoolId);
             // 과목 통계 재집계
-            analyticsRepo.upsertSubjectStatistics(subjectId, year, semester);
+            analyticsRepo.upsertSubjectStatistics(subjectId, year, semester, schoolId);
             // 종합 대시보드 갱신
-            analyticsRepo.upsertStudentDashboard(studentId, year, semester);
+            analyticsRepo.upsertStudentDashboard(studentId, year, semester, schoolId);
 
             log.info("성적 분석 완료: studentId={}, subjectId={}", studentId, subjectId);
         } catch (Exception e) {

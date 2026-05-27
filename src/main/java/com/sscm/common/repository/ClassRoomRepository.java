@@ -18,4 +18,8 @@ public interface ClassRoomRepository extends JpaRepository<ClassRoom, Long> {
     List<ClassRoom> findByAcademicYearWithTeacher(@Param("year") int year);
 
     Optional<ClassRoom> findByAcademicYearAndGradeAndClassNum(int academicYear, int grade, int classNum);
+
+    @Query("SELECT c FROM ClassRoom c LEFT JOIN FETCH c.homeroomTeacher t LEFT JOIN FETCH t.user " +
+           "WHERE c.school.id = :schoolId AND c.academicYear = :year ORDER BY c.grade, c.classNum")
+    List<ClassRoom> findBySchool_IdAndAcademicYear(@Param("schoolId") Long schoolId, @Param("year") int year);
 }

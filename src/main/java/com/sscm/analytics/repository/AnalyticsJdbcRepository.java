@@ -40,7 +40,7 @@ public class AnalyticsJdbcRepository {
      * 운영 DB에서: 해당 학생+학기의 전 과목 성적을 집계 (COUNT, SUM, AVG, MAX, MIN)
      * 분석 DB에서: 결과를 student_score_summary 테이블에 upsert
      */
-    public void upsertStudentScoreSummary(Long studentId, Integer year, Integer semester) {
+    public void upsertStudentScoreSummary(Long studentId, Integer year, Integer semester, Long schoolId) {
         // 1. 운영 DB에서 집계
         var row = primaryJdbc.queryForMap(
                 """
@@ -68,8 +68,8 @@ public class AnalyticsJdbcRepository {
                 INSERT INTO student_score_summary
                     (student_id, student_name, academic_year, semester,
                      subject_count, total_score, average_score, highest_score, lowest_score,
-                     average_grade, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     average_grade, school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (student_id, academic_year, semester)
                 DO UPDATE SET
                     student_name = EXCLUDED.student_name,
@@ -79,12 +79,13 @@ public class AnalyticsJdbcRepository {
                     highest_score = EXCLUDED.highest_score,
                     lowest_score = EXCLUDED.lowest_score,
                     average_grade = EXCLUDED.average_grade,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 studentId, row.get("student_name"), year, semester,
                 row.get("subject_count"), row.get("total_score"),
                 row.get("average_score"), row.get("highest_score"),
-                row.get("lowest_score"), gradeLetter);
+                row.get("lowest_score"), gradeLetter, schoolId);
 
         log.debug("성적 요약 upsert: studentId={}, year={}, semester={}", studentId, year, semester);
     }
@@ -95,7 +96,7 @@ public class AnalyticsJdbcRepository {
      * 운영 DB에서: 해당 과목+학기의 전체 학생 성적을 집계
      * 분석 DB에서: subject_statistics 테이블에 upsert
      */
-    public void upsertSubjectStatistics(Long subjectId, Integer year, Integer semester) {
+    public void upsertSubjectStatistics(Long subjectId, Integer year, Integer semester, Long schoolId) {
         var row = primaryJdbc.queryForMap(
                 """
                 SELECT sub.name AS subject_name,
@@ -122,8 +123,8 @@ public class AnalyticsJdbcRepository {
                     (subject_id, subject_name, academic_year, semester,
                      student_count, average_score, max_score, min_score, std_deviation,
                      grade_a_count, grade_b_count, grade_c_count, grade_d_count, grade_f_count,
-                     updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (subject_id, academic_year, semester)
                 DO UPDATE SET
                     subject_name = EXCLUDED.subject_name,
@@ -137,13 +138,14 @@ public class AnalyticsJdbcRepository {
                     grade_c_count = EXCLUDED.grade_c_count,
                     grade_d_count = EXCLUDED.grade_d_count,
                     grade_f_count = EXCLUDED.grade_f_count,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 subjectId, row.get("subject_name"), year, semester,
                 row.get("student_count"), row.get("average_score"),
                 row.get("max_score"), row.get("min_score"), row.get("std_deviation"),
                 row.get("grade_a"), row.get("grade_b"), row.get("grade_c"),
-                row.get("grade_d"), row.get("grade_f"));
+                row.get("grade_d"), row.get("grade_f"), schoolId);
 
         log.debug("과목 통계 upsert: subjectId={}, year={}, semester={}", subjectId, year, semester);
     }
@@ -153,7 +155,7 @@ public class AnalyticsJdbcRepository {
     /**
      * 학생의 학기별 기록(출결/수상/봉사/세특/종합의견) 건수를 재집계.
      */
-    public void upsertStudentAttendanceSummary(Long studentId, Integer year, Integer semester) {
+    public void upsertStudentAttendanceSummary(Long studentId, Integer year, Integer semester, Long schoolId) {
         var row = primaryJdbc.queryForMap(
                 """
                 SELECT COUNT(CASE WHEN category = 'ATTENDANCE' THEN 1 END)      AS attendance_count,
@@ -171,8 +173,8 @@ public class AnalyticsJdbcRepository {
                 INSERT INTO student_attendance_summary
                     (student_id, academic_year, semester,
                      attendance_count, award_count, volunteer_count,
-                     special_note_count, general_opinion_count, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     special_note_count, general_opinion_count, school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (student_id, academic_year, semester)
                 DO UPDATE SET
                     attendance_count = EXCLUDED.attendance_count,
@@ -180,12 +182,13 @@ public class AnalyticsJdbcRepository {
                     volunteer_count = EXCLUDED.volunteer_count,
                     special_note_count = EXCLUDED.special_note_count,
                     general_opinion_count = EXCLUDED.general_opinion_count,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 studentId, year, semester,
                 row.get("attendance_count"), row.get("award_count"),
                 row.get("volunteer_count"), row.get("special_note_count"),
-                row.get("general_opinion_count"));
+                row.get("general_opinion_count"), schoolId);
 
         log.debug("기록 요약 upsert: studentId={}, year={}, semester={}", studentId, year, semester);
     }
@@ -195,7 +198,7 @@ public class AnalyticsJdbcRepository {
     /**
      * 학생의 학기별 피드백 카테고리별 건수를 재집계.
      */
-    public void upsertStudentFeedbackSummary(Long studentId, Integer year, Integer semester) {
+    public void upsertStudentFeedbackSummary(Long studentId, Integer year, Integer semester, Long schoolId) {
         var row = primaryJdbc.queryForMap(
                 """
                 SELECT COUNT(*)                                                AS total_count,
@@ -214,8 +217,8 @@ public class AnalyticsJdbcRepository {
                 INSERT INTO student_feedback_summary
                     (student_id, academic_year, semester,
                      total_feedback_count, academic_count, behavior_count,
-                     attendance_count, attitude_count, general_count, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     attendance_count, attitude_count, general_count, school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (student_id, academic_year, semester)
                 DO UPDATE SET
                     total_feedback_count = EXCLUDED.total_feedback_count,
@@ -224,12 +227,13 @@ public class AnalyticsJdbcRepository {
                     attendance_count = EXCLUDED.attendance_count,
                     attitude_count = EXCLUDED.attitude_count,
                     general_count = EXCLUDED.general_count,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 studentId, year, semester,
                 row.get("total_count"), row.get("academic_count"),
                 row.get("behavior_count"), row.get("attendance_count"),
-                row.get("attitude_count"), row.get("general_count"));
+                row.get("attitude_count"), row.get("general_count"), schoolId);
 
         log.debug("피드백 요약 upsert: studentId={}, year={}, semester={}", studentId, year, semester);
     }
@@ -242,7 +246,7 @@ public class AnalyticsJdbcRepository {
      * 상담은 year/semester 컬럼이 없고 counsel_date만 있으므로,
      * 날짜 기준으로 학기를 판별한다 (1학기: 3~8월, 2학기: 9~2월).
      */
-    public void upsertStudentCounselingSummary(Long studentId, Integer year, Integer semester) {
+    public void upsertStudentCounselingSummary(Long studentId, Integer year, Integer semester, Long schoolId) {
         String startDate;
         String endDate;
         if (semester == 1) {
@@ -273,8 +277,8 @@ public class AnalyticsJdbcRepository {
                     (student_id, academic_year, semester,
                      total_counsel_count, academic_count, career_count,
                      behavior_count, personal_count, other_count,
-                     last_counsel_date, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     last_counsel_date, school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (student_id, academic_year, semester)
                 DO UPDATE SET
                     total_counsel_count = EXCLUDED.total_counsel_count,
@@ -284,13 +288,14 @@ public class AnalyticsJdbcRepository {
                     personal_count = EXCLUDED.personal_count,
                     other_count = EXCLUDED.other_count,
                     last_counsel_date = EXCLUDED.last_counsel_date,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 studentId, year, semester,
                 row.get("total_count"), row.get("academic_count"),
                 row.get("career_count"), row.get("behavior_count"),
                 row.get("personal_count"), row.get("other_count"),
-                row.get("last_counsel_date"));
+                row.get("last_counsel_date"), schoolId);
 
         log.debug("상담 요약 upsert: studentId={}, year={}, semester={}", studentId, year, semester);
     }
@@ -303,7 +308,7 @@ public class AnalyticsJdbcRepository {
      * 분석 DB의 다른 요약 테이블에서 데이터를 읽어서
      * student_learning_dashboard 테이블에 통합 저장.
      */
-    public void upsertStudentDashboard(Long studentId, Integer year, Integer semester) {
+    public void upsertStudentDashboard(Long studentId, Integer year, Integer semester, Long schoolId) {
         // 분석 DB에서 각 요약 테이블 조회
         var scoreRow = queryAnalyticsOrDefault(
                 "SELECT average_score, student_name FROM student_score_summary WHERE student_id = ? AND academic_year = ? AND semester = ?",
@@ -339,8 +344,8 @@ public class AnalyticsJdbcRepository {
                     (student_id, student_name, academic_year, semester,
                      avg_score, score_trend, attendance_count, award_count,
                      total_feedback_count, total_counsel_count, last_counsel_date,
-                     risk_level, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     risk_level, school_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON CONFLICT (student_id, academic_year, semester)
                 DO UPDATE SET
                     student_name = EXCLUDED.student_name,
@@ -352,6 +357,7 @@ public class AnalyticsJdbcRepository {
                     total_counsel_count = EXCLUDED.total_counsel_count,
                     last_counsel_date = EXCLUDED.last_counsel_date,
                     risk_level = EXCLUDED.risk_level,
+                    school_id = EXCLUDED.school_id,
                     updated_at = NOW()
                 """,
                 studentId, studentName, year, semester,
@@ -361,7 +367,7 @@ public class AnalyticsJdbcRepository {
                 toInt(feedbackRow.get("total_feedback_count")),
                 toInt(counselRow.get("total_counsel_count")),
                 counselRow.get("last_counsel_date"),
-                riskLevel);
+                riskLevel, schoolId);
 
         log.debug("대시보드 upsert: studentId={}, year={}, semester={}, risk={}",
                 studentId, year, semester, riskLevel);

@@ -29,6 +29,10 @@ public class ClassRoom {
     @JoinColumn(name = "homeroom_teacher_id")
     private Teacher homeroomTeacher;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_id", nullable = false)
+    private School school;
+
     public void assignHomeroom(Teacher teacher) {
         this.homeroomTeacher = teacher;
     }

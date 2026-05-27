@@ -246,6 +246,80 @@
       "targets": [
         { "expr": "rate(sscm_redis_cache_hit_total{application=\"sscm-backend\"}[5m]) / (rate(sscm_redis_cache_hit_total{application=\"sscm-backend\"}[5m]) + rate(sscm_redis_cache_miss_total{application=\"sscm-backend\"}[5m]))", "legendFormat": "히트율" }
       ]
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "custom": { "fillOpacity": 20, "lineWidth": 2 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
+      "id": 16,
+      "title": "ECS CPU / Memory 사용률",
+      "type": "timeseries",
+      "targets": [
+        { "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/ECS", "metricName": "CPUUtilization", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "ClusterName": ["sscm-cluster"], "ServiceName": ["sscm-backend"] }, "region": "ap-northeast-2", "label": "Backend CPU" },
+        { "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/ECS", "metricName": "MemoryUtilization", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "ClusterName": ["sscm-cluster"], "ServiceName": ["sscm-backend"] }, "region": "ap-northeast-2", "label": "Backend Memory" }
+      ]
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "fillOpacity": 20, "lineWidth": 2 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 52 },
+      "id": 17,
+      "title": "RDS CPU 사용률",
+      "type": "timeseries",
+      "targets": [
+        { "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/RDS", "metricName": "CPUUtilization", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "DBInstanceIdentifier": ["sscm-db"] }, "region": "ap-northeast-2", "label": "sscm-db" },
+        { "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/RDS", "metricName": "CPUUtilization", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "DBInstanceIdentifier": ["sscm-analytics-db"] }, "region": "ap-northeast-2", "label": "sscm-analytics-db" }
+      ]
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 52 },
+      "id": 18,
+      "title": "RDS DB 커넥션 수",
+      "type": "timeseries",
+      "targets": [
+        { "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/RDS", "metricName": "DatabaseConnections", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "DBInstanceIdentifier": ["sscm-db"] }, "region": "ap-northeast-2", "label": "sscm-db" },
+        { "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/RDS", "metricName": "DatabaseConnections", "statistic": "Average", "period": "300", "matchExact": true, "dimensions": { "DBInstanceIdentifier": ["sscm-analytics-db"] }, "region": "ap-northeast-2", "label": "sscm-analytics-db" }
+      ]
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 60 },
+      "id": 19,
+      "title": "ALB 요청 수 / 5xx",
+      "type": "timeseries",
+      "targets": [
+        { "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/ApplicationELB", "metricName": "RequestCount", "statistic": "Sum", "period": "300", "matchExact": true, "dimensions": { "LoadBalancer": ["app/sscm-alb/0c7de676e9591246"] }, "region": "ap-northeast-2", "label": "요청 수" },
+        { "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0, "namespace": "AWS/ApplicationELB", "metricName": "HTTPCode_Target_5XX_Count", "statistic": "Sum", "period": "300", "matchExact": true, "dimensions": { "LoadBalancer": ["app/sscm-alb/0c7de676e9591246"] }, "region": "ap-northeast-2", "label": "5xx" }
+      ]
     }
   ],
   "schemaVersion": 39,

@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.sscm.common.tenant.TenantContext;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -179,9 +181,10 @@ public class AnalyticsDashboardService {
     }
 
     public List<SubjectStatisticsDto> getAllSubjectStatistics(Integer year, Integer semester) {
+        Long schoolId = TenantContext.requireSchoolId();
         var rows = analyticsJdbc.queryForList(
-                "SELECT * FROM subject_statistics WHERE academic_year = ? AND semester = ? ORDER BY subject_name",
-                year, semester);
+                "SELECT * FROM subject_statistics WHERE academic_year = ? AND semester = ? AND school_id = ? ORDER BY subject_name",
+                year, semester, schoolId);
 
         return rows.stream().map(this::mapToSubjectStatistics).toList();
     }

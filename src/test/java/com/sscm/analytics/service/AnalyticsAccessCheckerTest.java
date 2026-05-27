@@ -6,8 +6,12 @@ import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.ParentRepository;
 import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.tenant.TenantContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +46,18 @@ class AnalyticsAccessCheckerTest {
     @Mock
     private ParentStudentRepository parentStudentRepository;
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
+    @BeforeEach
+    void setUp() {
+        TenantContext.setSchoolId(1L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+    }
+
     private Authentication authOf(Long userId, String role) {
         return new UsernamePasswordAuthenticationToken(
                 String.valueOf(userId), null,
@@ -53,18 +69,24 @@ class AnalyticsAccessCheckerTest {
     class TeacherAdminAccess {
 
         @Test
-        @DisplayName("교사는 모든 학생 데이터 조회 가능")
+        @DisplayName("교사는 같은 학교 학생 데이터 조회 가능")
         void teacher_canAccessAnyStudent() {
             Authentication auth = authOf(1L, "ROLE_TEACHER");
+            Student student = Student.builder().id(99L)
+                    .user(User.builder().id(50L).school(testSchool).build()).build();
+            given(studentRepository.findById(99L)).willReturn(Optional.of(student));
 
             assertThatCode(() -> accessChecker.checkAccess(99L, auth))
                     .doesNotThrowAnyException();
         }
 
         @Test
-        @DisplayName("관리자는 모든 학생 데이터 조회 가능")
+        @DisplayName("관리자는 같은 학교 학생 데이터 조회 가능")
         void admin_canAccessAnyStudent() {
             Authentication auth = authOf(1L, "ROLE_ADMIN");
+            Student student = Student.builder().id(99L)
+                    .user(User.builder().id(50L).school(testSchool).build()).build();
+            given(studentRepository.findById(99L)).willReturn(Optional.of(student));
 
             assertThatCode(() -> accessChecker.checkAccess(99L, auth))
                     .doesNotThrowAnyException();
@@ -83,7 +105,7 @@ class AnalyticsAccessCheckerTest {
             Authentication auth = authOf(userId, "ROLE_STUDENT");
 
             Student student = Student.builder().id(studentId)
-                    .user(User.builder().id(userId).build()).build();
+                    .user(User.builder().id(userId).school(testSchool).build()).build();
             given(studentRepository.findByUser_Id(userId)).willReturn(Optional.of(student));
 
             assertThatCode(() -> accessChecker.checkAccess(studentId, auth))
@@ -99,7 +121,7 @@ class AnalyticsAccessCheckerTest {
             Authentication auth = authOf(userId, "ROLE_STUDENT");
 
             Student student = Student.builder().id(ownStudentId)
-                    .user(User.builder().id(userId).build()).build();
+                    .user(User.builder().id(userId).school(testSchool).build()).build();
             given(studentRepository.findByUser_Id(userId)).willReturn(Optional.of(student));
 
             assertThatThrownBy(() -> accessChecker.checkAccess(otherStudentId, auth))
@@ -133,8 +155,9 @@ class AnalyticsAccessCheckerTest {
             Authentication auth = authOf(userId, "ROLE_PARENT");
 
             Parent parent = Parent.builder().id(1L)
-                    .user(User.builder().id(userId).build()).build();
-            Student student = Student.builder().id(studentId).build();
+                    .user(User.builder().id(userId).school(testSchool).build()).build();
+            Student student = Student.builder().id(studentId)
+                    .user(User.builder().id(30L).school(testSchool).build()).build();
 
             given(parentRepository.findByUser_Id(userId)).willReturn(Optional.of(parent));
             given(studentRepository.findById(studentId)).willReturn(Optional.of(student));
@@ -152,8 +175,9 @@ class AnalyticsAccessCheckerTest {
             Authentication auth = authOf(userId, "ROLE_PARENT");
 
             Parent parent = Parent.builder().id(1L)
-                    .user(User.builder().id(userId).build()).build();
-            Student student = Student.builder().id(studentId).build();
+                    .user(User.builder().id(userId).school(testSchool).build()).build();
+            Student student = Student.builder().id(studentId)
+                    .user(User.builder().id(30L).school(testSchool).build()).build();
 
             given(parentRepository.findByUser_Id(userId)).willReturn(Optional.of(parent));
             given(studentRepository.findById(studentId)).willReturn(Optional.of(student));

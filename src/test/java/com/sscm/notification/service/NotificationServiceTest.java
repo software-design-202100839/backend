@@ -2,6 +2,7 @@ package com.sscm.notification.service;
 
 import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
 import com.sscm.notification.dto.NotificationResponse;
@@ -45,12 +46,14 @@ class NotificationServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private SimpMessagingTemplate messagingTemplate;
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
     private User recipient;
     private Notification notification;
 
     @BeforeEach
     void setUp() {
-        recipient = User.builder().id(1L).name("이학생").build();
+        recipient = User.builder().id(1L).name("이학생").school(testSchool).build();
 
         notification = Notification.builder()
                 .id(10L)
@@ -251,7 +254,7 @@ class NotificationServiceTest {
         @Test
         @DisplayName("여러 수신자에게 알림 생성")
         void multipleRecipients() {
-            User recipient2 = User.builder().id(2L).name("박학생").build();
+            User recipient2 = User.builder().id(2L).name("박학생").school(testSchool).build();
             Notification notification2 = Notification.builder()
                     .id(11L).recipient(recipient2)
                     .type(NotificationType.SCORE_UPDATE)

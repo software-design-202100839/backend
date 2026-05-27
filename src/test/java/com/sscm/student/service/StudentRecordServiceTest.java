@@ -5,14 +5,17 @@ import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.User;
 import com.sscm.auth.repository.StudentRepository;
 import com.sscm.auth.repository.UserRepository;
+import com.sscm.common.entity.School;
 import com.sscm.common.exception.BusinessException;
 import com.sscm.common.exception.ErrorCode;
+import com.sscm.common.tenant.TenantContext;
 import com.sscm.student.dto.StudentRecordRequest;
 import com.sscm.student.dto.StudentRecordResponse;
 import com.sscm.student.dto.StudentRecordUpdateRequest;
 import com.sscm.student.entity.RecordCategory;
 import com.sscm.student.entity.StudentRecord;
 import com.sscm.student.repository.StudentRecordRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,23 +53,32 @@ class StudentRecordServiceTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
     private User teacherUser;
     private User studentUser;
     private Student student;
 
     @BeforeEach
     void setUp() {
+        TenantContext.setSchoolId(1L);
+
         teacherUser = User.builder()
-                .name("이교사").role(Role.TEACHER).build();
+                .name("이교사").role(Role.TEACHER).school(testSchool).build();
         setIdField(teacherUser, 10L);
 
         studentUser = User.builder()
-                .name("이학생").role(Role.STUDENT).build();
+                .name("이학생").role(Role.STUDENT).school(testSchool).build();
         setIdField(studentUser, 1L);
 
         student = Student.builder()
                 .user(studentUser).admissionYear(2025).build();
         setIdField(student, 1L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     private StudentRecord createRecord(Long id, RecordCategory category, Map<String, Object> content) {

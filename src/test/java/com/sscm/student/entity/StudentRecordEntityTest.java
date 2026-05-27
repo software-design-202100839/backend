@@ -2,6 +2,7 @@ package com.sscm.student.entity;
 
 import com.sscm.auth.entity.Student;
 import com.sscm.auth.entity.User;
+import com.sscm.common.entity.School;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,8 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("StudentRecord 엔티티 단위 테스트")
 class StudentRecordEntityTest {
 
+    private final School testSchool = School.builder().id(1L).name("테스트학교").code("TEST").build();
+
     private StudentRecord buildRecord() {
-        User user = User.builder().id(1L).name("이학생").build();
+        User user = User.builder().id(1L).name("이학생").school(testSchool).build();
         Student student = Student.builder().id(1L).user(user).admissionYear(2024).build();
 
         return StudentRecord.builder()
