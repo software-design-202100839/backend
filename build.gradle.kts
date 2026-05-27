@@ -85,6 +85,17 @@ tasks.jacocoTestReport {
 		xml.required = true
 		html.required = true
 	}
+	classDirectories.setFrom(files(classDirectories.files.map {
+		fileTree(it) {
+			exclude(
+				"**/entity/**",
+				"**/dto/**",
+				"**/config/**",
+				"**/exception/**",
+				"**/SscmApplication*",
+			)
+		}
+	}))
 }
 
 tasks.jacocoTestCoverageVerification {
@@ -111,5 +122,12 @@ sonarqube {
 		property("sonar.tests", "src/test/java")
 		property("sonar.java.coveragePlugin", "jacoco")
 		property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml")
+		property("sonar.coverage.exclusions", listOf(
+			"**/entity/**",
+			"**/dto/**",
+			"**/config/**",
+			"**/exception/**",
+			"**/SscmApplication.java",
+		).joinToString(","))
 	}
 }

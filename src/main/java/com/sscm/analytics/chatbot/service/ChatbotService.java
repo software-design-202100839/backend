@@ -209,7 +209,7 @@ public class ChatbotService {
             return new ChatResponse(answer, sessionId);
         } catch (Exception e) {
             log.error("AI 챗봇 에러: {}", e.getMessage(), e);
-            return new ChatResponse("AI 서비스 오류: " + e.getMessage());
+            return new ChatResponse("AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", sessionId);
         }
     }
 
