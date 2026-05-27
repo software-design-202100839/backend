@@ -110,10 +110,30 @@ Kafka는 stateful 워크로드. 브로커 장애 시 파티션 리밸런싱, 스
 
 ### Q: 모니터링에서 뭘 봐요?
 
-부하를 올리면서 **세 가지**를 봅니다:
-1. **API p95 응답시간** — 사용자 95%의 체감 속도. 급등 지점 = 한계점
-2. **Kafka Consumer Lag** — 처리 못한 메시지 수. 계속 쌓이면 Consumer 스케일아웃 필요
-3. **DB 커넥션 풀 사용률** — HikariCP active/max. 90% 이상이면 커넥션 부족
+**3계층 19개 패널**로 구성된 Grafana 대시보드에서 봅니다:
+
+1. **앱 계층 (10패널)** — API p95 응답시간, HTTP 처리량, 5xx 에러, JVM Heap, GC 일시정지, HikariCP 커넥션풀, Kafka Consumer Lag, 스레드 수, Uptime, CPU
+2. **비즈니스 계층 (5패널)** — 성적 등록, 상담 생성, 피드백, 알림, AI 챗봇 사용 (도메인 이벤트 기반 커스텀 메트릭)
+3. **인프라 계층 (4패널)** — CloudWatch 연동: ECS CPU/메모리, RDS 커넥션, Redis 메모리 사용량
+
+부하를 올리면서 특히 주목하는 지표:
+- **API p95 응답시간** — 사용자 95%의 체감 속도. 급등 지점 = 한계점
+- **Kafka Consumer Lag** — 처리 못한 메시지 수. 계속 쌓이면 Consumer 스케일아웃 필요
+- **DB 커넥션 풀 사용률** — HikariCP active/max. 90% 이상이면 커넥션 부족
+
+### Q: 왜 3계층으로 나눴어요?
+
+> "각 계층이 다른 관점을 커버합니다. 앱 계층은 개발자가 디버깅할 때, 비즈니스 계층은 서비스가 정상 동작하는지 확인할 때, 인프라 계층은 AWS 리소스 한계를 판단할 때 봅니다. 알림도 계층별로 다릅니다 — 5xx 에러는 즉시, Consumer Lag은 추세로 판단합니다."
+
+### Q: 5개 알림 규칙은?
+
+| 규칙 | 조건 | 의미 |
+|------|------|------|
+| 5xx 에러 | count > 0 | 서버 에러 발생 → 즉시 확인 |
+| Heap 포화 | JVM Heap > 90% | 메모리 부족 → GC 튜닝 또는 증설 |
+| 커넥션풀 고갈 | active > 90% | DB 커넥션 부족 → pool-size 또는 Redis 캐시 |
+| Consumer 지연 | Lag 지속 증가 | Kafka 처리 못 따라감 → Consumer 스케일아웃 |
+| 응답 급등 | p95 임계값 초과 | 성능 저하 → 쿼리 최적화, 스펙업 |
 
 ### Q: 지표가 이상하면 뭘 하는데?
 
@@ -127,7 +147,68 @@ Kafka는 stateful 워크로드. 브로커 장애 시 파티션 리밸런싱, 스
 
 ---
 
-## 5. 부하 테스트 수치
+## 5. 멀티테넌시
+
+### Q: 다중 학교는 어떻게 지원하나요?
+
+> "Shared-Database, Discriminator-Column 전략입니다. users, classes 테이블에 school_id FK를 추가했습니다. JWT에 schoolId claim을 포함하고, TenantContext(ThreadLocal)로 서비스 계층에 전파합니다. 교차 학교 접근 시 403 차단합니다."
+
+```
+JWT → JwtAuthenticationFilter → TenantContext.set(schoolId)
+  → 서비스 메서드에서 TenantContext.get()으로 school_id 접근
+  → Repository에서 school_id 기반 필터링
+  → 다른 학교 데이터 접근 시 AccessDeniedException (403)
+```
+
+### Q: 왜 Database-per-tenant이 아닌 Discriminator Column을 선택했나요?
+
+| 전략 | 장점 | 단점 |
+|------|------|------|
+| Database-per-tenant | 완전한 데이터 격리 | 학교당 DB 인스턴스 필요. 수십~수백 학교면 비용 비현실적 |
+| Schema-per-tenant | 중간 수준 격리 | 커넥션 풀 관리 복잡. 마이그레이션 N번 실행 |
+| **Discriminator Column** | 기존 스키마 최소 변경. 비용 일정 | 쿼리에 WHERE school_id 필수 |
+
+> "학교 수가 수십~수백 수준에서 DB-per-tenant은 RDS 인스턴스 비용이 학교 수에 비례합니다. school_id FK 추가만으로 기존 스키마를 최소 변경했고, TenantContext로 서비스 메서드 시그니처 변경 없이 전파합니다."
+
+### Q: TenantContext 누수 위험은?
+
+> "ThreadLocal 기반이므로 요청 종료 시 반드시 clear해야 합니다. JwtAuthenticationFilter의 finally 블록에서 TenantContext.clear()를 호출합니다. Kafka Consumer 등 비동기 컨텍스트에서는 이벤트에 schoolId를 포함하여 전달합니다."
+
+---
+
+## 6. AI 챗봇
+
+### Q: AI 챗봇은 어떻게 구현했나요?
+
+> "Spring AI + Gemini 2.5 Flash 기반입니다. Function Calling으로 13개 Tool을 연결했습니다. 역할별 접근 제어를 적용하여 교사는 13개 tool 전체, 학생/학부모는 5개 tool만 사용 가능합니다. 대화 히스토리는 인메모리로 관리하며 sessionId + 30분 TTL입니다."
+
+### Q: 왜 Function Calling 방식인가요?
+
+| 방식 | 설명 | 단점 |
+|------|------|------|
+| RAG (검색 증강) | DB 내용을 벡터화하여 검색 | 벡터 DB 추가 운영. 실시간 데이터 반영 어려움 |
+| 직접 SQL 생성 | LLM이 SQL을 생성 | SQL Injection 위험. 스키마 노출 |
+| **Function Calling** | LLM이 미리 정의된 Tool을 호출 | 안전. 기존 서비스 레이어 재활용. 접근 제어 적용 가능 |
+
+> "Function Calling은 LLM이 기존 서비스 메서드를 호출하는 방식이라 접근 제어가 자연스럽게 적용됩니다. 새 기능 추가 시 Tool만 등록하면 됩니다."
+
+### Q: 역할별 접근 제어는 어떻게?
+
+| 역할 | 사용 가능 Tool 수 | 예시 |
+|------|-------------------|------|
+| 교사/관리자 | 13개 | 성적 조회/등록, 상담 기록, 분석 통계, 학생부 조회 등 전체 |
+| 학생 | 5개 | 본인 성적 조회, 본인 피드백 조회 등 |
+| 학부모 | 5개 | 자녀 성적 조회, 자녀 피드백 조회 등 |
+
+> "교사용 Tool에는 전체 학생 데이터 접근이 포함되므로 학생/학부모에게 노출하면 프롬프트 조작으로 다른 학생 데이터 유출 가능성이 있습니다. Tool 등록 시점에 역할별 필터링을 적용합니다."
+
+### Q: 대화 히스토리 관리는?
+
+> "인메모리 ConcurrentHashMap에 sessionId별로 저장합니다. 30분 TTL로 만료됩니다. 영속화하지 않는 이유는 대화 내용에 학생 개인정보가 포함될 수 있어, 서버 재시작 시 자동 삭제되는 것이 보안상 유리하기 때문입니다."
+
+---
+
+## 7. 부하 테스트 수치
 
 ### 테스트 환경
 - ECS Fargate 0.5 vCPU, 1GB
@@ -152,7 +233,7 @@ Kafka는 stateful 워크로드. 브로커 장애 시 파티션 리밸런싱, 스
 
 ---
 
-## 6. 보안
+## 8. 보안
 
 ### Q: JWT 블랙리스트는 왜 필요?
 
@@ -170,11 +251,11 @@ Kafka는 stateful 워크로드. 브로커 장애 시 파티션 리밸런싱, 스
 
 ### Q: AI 챗봇 보안은?
 
-> "교사/관리자만 사용 가능. 학생/학부모는 프롬프트 조작으로 다른 학생 데이터를 유출할 수 있어 차단했습니다."
+> "역할별 Tool 접근 제어를 적용했습니다. 교사는 13개 Tool 전체 사용 가능하고, 학생/학부모는 본인/자녀 데이터만 접근 가능한 5개 Tool로 제한됩니다. Function Calling 방식이라 LLM이 직접 DB에 접근하지 않고, 기존 서비스 레이어의 접근 제어가 그대로 적용됩니다."
 
 ---
 
-## 7. 확장성
+## 9. 확장성
 
 ### Q: 확장하려면?
 

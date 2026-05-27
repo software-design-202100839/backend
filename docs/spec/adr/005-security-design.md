@@ -84,14 +84,99 @@ RT → refresh_tokens에서 삭제
 → 이후 해당 AT로 요청 시 블랙리스트 확인 후 거부
 ```
 
-### Redis → PostgreSQL 이전 이유
+### Redis L1 캐시 + DB L2 Fallback (현재 상태, 2026-05-27)
 
-| 항목 | Redis | PostgreSQL |
-|------|-------|-----------|
-| TTL 관리 | 자동 | @Scheduled 배치 (매일 03:00) |
-| 인프라 | 별도 서버 | DB 재사용 |
-| 규모 적합성 | 초당 수만 건 (다중 학교 SaaS 대응) | 단일 인스턴스 기준 충분, 다중 인스턴스 시 블랙리스트 공유 불가 |
-| 장애 지점 | 2개 (DB + Redis) | 1개 (DB만) |
+초기에는 Redis를 제거하고 PostgreSQL만 사용했으나, AWS 풀 아키텍처 배포 후 다중 인스턴스 환경에서 블랙리스트 공유 문제와 커넥션 풀 고갈 리스크가 확인되어 Redis를 재도입했다.
+
+**현재 구조: TokenBlacklistService**
+```
+JWT 블랙리스트 확인 요청
+    ↓
+Redis L1 캐시 조회 (ElastiCache)
+    ↓ cache miss
+PostgreSQL L2 fallback 조회
+    ↓ DB에 존재하면
+Redis에 캐싱 후 반환
+```
+
+| 계층 | 역할 | TTL |
+|------|------|-----|
+| Redis (L1) | 블랙리스트 빠른 조회, 다중 인스턴스 공유 | AT 잔여 만료시간 |
+| PostgreSQL (L2) | 영속 저장, Redis 장애 시 fallback | @Scheduled 배치 정리 (매일 03:00) |
+
+**Micrometer 메트릭 추적:**
+- `token.blacklist.cache.hit` — Redis 캐시 히트 수
+- `token.blacklist.cache.miss` — Redis 미스 → DB fallback 수
+- Grafana 대시보드에서 캐시 효율 모니터링 가능
+
+### Redis 이전/재도입 히스토리
+
+| 시점 | 결정 | 이유 |
+|------|------|------|
+| Sprint 6 초기 | Redis → PostgreSQL 이전 | 인프라 단순화 (단일 인스턴스 기준 충분) |
+| AWS 배포 후 | Redis 재도입 (L1 캐시) | 다중 인스턴스 블랙리스트 공유 필요, 동시 1000+ 요청 시 DB 커넥션 풀 고갈 방지 |
+
+---
+
+## 2-1. 멀티테넌시 격리 (Multi-Tenancy Isolation)
+
+### 원칙
+
+> "교사/관리자는 자신이 소속된 학교의 데이터만 접근할 수 있다. 교차 학교 접근은 모든 경우에 차단한다."
+
+### JWT schoolId Claim
+
+로그인 시 JWT Access Token에 `schoolId` 클레임을 포함하여 발급한다. 모든 API 요청에서 학교 컨텍스트를 식별하는 데 사용한다.
+
+```json
+{
+  "sub": "user-uuid",
+  "role": "TEACHER",
+  "schoolId": 3,
+  "exp": 1748300000
+}
+```
+
+### TenantContext (ThreadLocal)
+
+```
+JWT 파싱 → schoolId 추출
+    ↓
+TenantContext.set(schoolId)  // ThreadLocal에 저장
+    ↓
+서비스 레이어에서 TenantContext.get()으로 학교 컨텍스트 조회
+    ↓
+요청 완료 후 TenantContext.clear()  // 메모리 누수 방지
+```
+
+### 서비스별 학교 경계 검증
+
+| 서비스 | 생성 시 | 조회 시 |
+|--------|---------|---------|
+| ScoreService | 학생의 schoolId와 요청자 schoolId 일치 확인 | 본인 학교 데이터만 반환 |
+| FeedbackService | 동일 | 동일 |
+| CounselingService | 동일 | 동일 |
+| StudentRecordService | 동일 | 동일 |
+
+### AnalyticsAccessChecker
+
+TEACHER/ADMIN 역할의 분석 데이터 접근 시 학교 경계를 검증한다.
+
+```
+분석 API 요청 (TEACHER, schoolId=3)
+    ↓
+AnalyticsAccessChecker.validate(requestSchoolId, userSchoolId)
+    ↓
+schoolId 불일치 → 403 Forbidden
+```
+
+### AI 챗봇 역할별 도구 제한
+
+| 역할 | 접근 가능 도구 수 | 설명 |
+|------|-------------------|------|
+| TEACHER | 13개 | 성적 조회/분석, 피드백 관리, 상담 내역, 학생부, 통계 등 전체 교육 도구 |
+| STUDENT | 5개 | 본인 성적 조회, 본인 피드백 조회 등 제한된 도구 |
+| PARENT | 5개 | 자녀 성적 조회, 자녀 피드백 조회 등 제한된 도구 |
 
 ---
 
@@ -99,12 +184,12 @@ RT → refresh_tokens에서 삭제
 
 ### 역할 기반 접근 제어
 
-| 역할 | 접근 범위 |
-|------|-----------|
-| ADMIN | 전체 접근, 모든 데이터 조회·수정 |
-| TEACHER | 교육 데이터 관리 (담당 범위 제한) |
-| STUDENT | 본인 공개 데이터 조회만 |
-| PARENT | 자녀 공개 데이터 조회만 |
+| 역할 | 접근 범위 | 학교 격리 |
+|------|-----------|-----------|
+| ADMIN | 전체 접근, 모든 데이터 조회·수정 | 본인 학교만 (schoolId 검증) |
+| TEACHER | 교육 데이터 관리 (담당 범위 제한) | 본인 학교만 (schoolId 검증) |
+| STUDENT | 본인 공개 데이터 조회만 | 본인 학교 (암묵적) |
+| PARENT | 자녀 공개 데이터 조회만 | 자녀 학교 (암묵적) |
 
 ### 교사 권한 체크 (학년도 기반)
 

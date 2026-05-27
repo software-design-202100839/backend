@@ -1,74 +1,116 @@
 # SSCM Project Status
 
-> Last updated: 2026-04-11 by session 2026-04-11-01
+> Last updated: 2026-05-27
 
-## Current Sprint
-- **Sprint 5 진행 중** (Jira Sprint ID: 200, 2026-04-11 ~ 2026-04-18)
-- 목표: 시험기간 cadence 유지. 회귀 점검 1건만(SSCM-65).
-- 다음: Sprint 6(4/18~4/25) 동일 패턴, Sprint 7(4/25~5/2) 실제 발표 준비.
-- 매주 토요일 사용자 트리거로 sprint close (한 줄 메시지면 충분).
-- 회고: `docs/sprint/sprint-5.md`
+## 프로젝트 현황 요약
 
-## 직전 Sprint
-- **Sprint 4 종료** (Jira Sprint ID: 167, 2026-04-11 close)
-- 회고: `docs/sprint/sprint-4.md`
+SSCM(Smart School Class Management) 프로젝트의 모든 개발 스프린트가 완료되었으며, AWS 풀 아키텍처가 프로덕션 환경에 배포되어 운영 중이다. 현재는 **발표 준비** 단계에 집중하고 있다.
 
-## Sprint 3 결과 (2026-03-29 ~ 2026-04-04) — 완료
-- 전체 종료 기준 달성
-- 회고: `docs/sprint/sprint-3.md`
+### 주요 완료 항목
 
-## Sprint 4 결과 (2026-04-05 ~ 2026-04-11) — 완료
+| 영역 | 상태 | 요약 |
+|------|------|------|
+| 코어 기능 (Sprint 1~4) | 완료 | 성적, 학생부, 상담, 피드백, 알림, 관리자 CRUD |
+| OLAP 분석 파이프라인 | 완료 | Kafka 이벤트 → 분석 DB, 대시보드, 집계 API |
+| 멀티테넌시 (ADR-006) | 완료 | School 엔티티, JWT schoolId, TenantContext, 교차 학교 접근 차단 |
+| AI 챗봇 | 완료 | Spring AI + Gemini 2.5 Flash, 13개 Tool, 역할별 접근 제어, 대화 히스토리 |
+| 모니터링 3계층 | 완료 | 앱 10 + 비즈니스 5 + 인프라 4 = 19 Grafana 패널, 5 알림 규칙 |
+| AWS 풀 아키텍처 | 배포 완료 | ECS Fargate + ALB + RDS x2 + Redis + MSK + CloudFront |
+| CI/CD | 완료 | 백엔드: GitHub Actions → ECR → ECS 자동 배포, 프론트: S3 + CloudFront CD |
+| SonarCloud | 개선 완료 | 커버리지 제외 설정, 보안 핫스팟 수정, Quality Gate 통과 |
+| 부하 테스트 | 완료 | k6 200VU 기준 p95 791ms, 140 req/s, 에러율 0% |
+| 프론트엔드 UX | 완료 | 플로팅 AI 위젯, 학생 선택 UX 일관성 개선 |
 
-### 완료
-| Jira | Assignee | Summary | Commit Date |
-|---------|----------|---------|-------------|
-| SSCM-59 | 이데브 | Prometheus + Grafana 모니터링 | 4/9 |
-| SSCM-60 | 이데브 | Grafana Alerting (PagerDuty 대체) | 4/9 |
-| SSCM-61 | 이데브 | k6 부하 테스트 + 결과 분석 | 4/9 |
-| SSCM-62 | 이데브 | RDS 백업 활성화 + 복구 절차 문서화 | 4/9 |
-| SSCM-63 | 이큐에이 | SonarCloud 연동 + CI 파이프라인 | 4/9 |
-| SSCM-64 | 이큐에이 | 전체 문서 정리 (스프린트 + 아키텍처) | 4/9~11 |
-| SSCM-58 | 이백엔드 | @Version Optimistic Locking + @Retryable 이메일 재시도 (Sprint 2→3→4 이월, 마지막날 클리어) | 4/11 |
+---
 
-### 스킵/변경 (설계 판단)
-| 원래 계획 | 판단 | 근거 |
-|-----------|------|------|
-| Dynatrace APM | **스킵** | Prometheus+Grafana와 기능 중복. 설계적 근거 없는 도구 추가는 부적절 |
-| PagerDuty | **Grafana Alerting 대체** | 1인 운영 규모에서 별도 SaaS 과잉. 내장 Alerting + Gmail SMTP로 충분 |
-| Redis @Cacheable | **도입 불필요** | k6 결과: 조회 API 이미 빠름. 캐시 무효화 복잡도 대비 이점 미미 |
+## 스프린트 이력
 
-### 발견된 개선 사항 (스코프 아웃 — 발표 후 검토)
-- 학생부 content JSON 표시 → 카테고리별 렌더링
-- 피드백 isVisibleToStudent 기본값 → 학생 공개 로직 점검
-- 상담내역 학생 권한 조회 허용
-- 보고서 생성 API/UI (요구사항 우선순위 낮음, SSCM-8 에픽 — 4주 압축 스프린트 범위 밖)
+| Sprint | 기간 | 주요 내용 | 회고 |
+|--------|------|-----------|------|
+| Sprint 1 | 2026-03-15 ~ 03-22 | 인증, 성적 CRUD, 프론트 초기 구축 | `docs/sprint/sprint-1.md` |
+| Sprint 2 | 2026-03-22 ~ 03-29 | 학생부, 상담, 피드백, 알림 | `docs/sprint/sprint-2.md` |
+| Sprint 3 | 2026-03-29 ~ 04-04 | OLAP 분석, Kafka, 관리자 기능 | `docs/sprint/sprint-3.md` |
+| Sprint 4 | 2026-04-05 ~ 04-11 | 모니터링, 부하 테스트, SonarCloud | `docs/sprint/sprint-4.md` |
+| Sprint 5+ | 2026-04-11 ~ 05-27 | AWS 배포, 멀티테넌시, AI 챗봇 강화, 프론트 CD | — |
+
+---
 
 ## AWS 인프라 현황
-- ALB: `sscm-alb-1703346258.ap-northeast-2.elb.amazonaws.com`
-- ECS 클러스터: `sscm-cluster` (backend + frontend 서비스)
-- RDS: `sscm-db.cvsqwimyifjw.ap-northeast-2.rds.amazonaws.com` (PostgreSQL 16)
-- Redis: `sscm-redis.xvtaov.0001.apn2.cache.amazonaws.com`
-- ECR: `sscm-backend`, `sscm-frontend`
-- CloudFormation 스택: `sscm-alb`, `sscm-data`, `sscm-ecs`
-- **현재 상태:** 전체 스택 삭제됨 (2026-04-09 비용 절감). 다음 작업 시 재구축 필요.
-- Grafana 접속: 스택 재구축 후 ALB DNS/grafana/ (admin/sscm2026!)
 
-## 비용 관리
-- 전체 스택 가동 시 ~$47/월 (~$1.5/일)
+### 프로덕션 리소스
+
+| 리소스 | 스펙 | 엔드포인트/식별자 |
+|--------|------|-------------------|
+| ECS 클러스터 | `sscm-cluster` | backend + frontend + monitoring 서비스 |
+| Backend Task | 0.5 vCPU / 1GB | ECS Fargate |
+| Frontend Task | 0.25 vCPU / 0.5GB | ECS Fargate |
+| Monitoring Task | 0.25 vCPU / 0.5GB | Prometheus + Grafana 사이드카 |
+| ALB | 경로 라우팅 | `/api/*` → backend, `/grafana/*` → monitoring, `/*` → frontend |
+| RDS (운영) | db.t3.micro | `sscm-db` (PostgreSQL 16) |
+| RDS (분석) | db.t3.micro | `sscm-analytics-db` (PostgreSQL 16) |
+| ElastiCache Redis | cache.t3.micro | JWT 블랙리스트 L1 캐시 |
+| MSK Kafka | kafka.t3.small x2 | 이벤트 파이프라인 (OLAP) |
+| CloudFront + S3 | — | 프론트엔드 CDN 배포 |
+| ECR | — | `sscm-backend`, `sscm-frontend` 이미지 저장소 |
+
+### 비용
+
+- 전체 스택 가동 시: ~$47/월 (~$1.5/일)
 - 사용 안 할 때: sscm-ecs 스택 삭제 (Fargate 과금 중지)
-- 발표 끝나면: 3개 스택 전부 삭제
+- 발표 종료 후: 3개 스택 전부 삭제 예정
+
+---
+
+## CI/CD 파이프라인
+
+### 백엔드 (자동 배포)
+```
+git push develop → GitHub Actions CI → test + SonarCloud → Docker build → ECR push → ECS force-new-deployment
+```
+
+### 프론트엔드 (자동 배포)
+```
+git push develop → GitHub Actions CD → npm build → S3 업로드 → CloudFront 캐시 무효화
+```
+
+---
+
+## SonarCloud 품질
+
+- Quality Gate: 통과
+- 커버리지 제외 설정 적용 (config, DTO, entity 등)
+- 보안 핫스팟 수정 완료
+
+---
+
+## 부하 테스트 결과
+
+| 항목 | 수치 |
+|------|------|
+| p50 | 297.4ms |
+| p95 | 791.2ms |
+| 처리량 | 140 req/s |
+| 에러율 | 0% |
+| 환경 | 0.5 vCPU / 1GB, 200 VU, 3분 30초 |
+
+---
+
+## 현재 Focus
+
+- **발표 준비** (아키텍처 다이어그램, Q&A, 트레이드오프, 데모 리허설)
+- 스크린샷 캡처 완료
+- 슬라이드 구성안 작성 완료
+
+---
 
 ## Blockers
+
 - (none)
 
-## Jira 위생 상태 (2026-04-11 정리)
-- 미완료 이슈: SSCM-8(보고서 에픽, 스코프 아웃)만 의도적으로 오픈 유지
-- 에픽 SSCM-5/6/7/9/10 → 완료 전환 (Sprint 2~4에서 구현 완료한 스토리들 반영)
-- 스토리 0개 미완료 (SSCM-58까지 4/11 클리어)
-
-## W13~14 — 발표 준비만 집중
+---
 
 ## Repos
+
 - Backend: `software-design-202100839/backend` → `/mnt/c/Users/seung/workspace/sscm-backend`
 - Frontend: `software-design-202100839/frontend` → `/mnt/c/Users/seung/workspace/sscm-frontend`
 - Both on `develop` branch
