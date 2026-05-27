@@ -38,6 +38,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -56,12 +57,11 @@ import java.util.*;
  *   STUDENT : student@sscm.dev  / student1234
  *   PARENT  : parent@sscm.dev   / parent1234
  */
-@Tag(name = "Dev", description = "개발 환경 전용 (프로덕션 비활성화)")
+@Tag(name = "Dev", description = "시드 데이터 관리 (seed-key 인증 필요)")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/dev")
 @RequiredArgsConstructor
-@Profile("dev")
 public class DevSeedController {
 
     // ── 시드 계정 고정값 ──────────────────────────────────────
@@ -87,6 +87,15 @@ public class DevSeedController {
     @Value("${dev.seed.admin.password}")
     private String adminPassword;
 
+    @Value("${dev.seed.key:#{null}}")
+    private String seedKey;
+
+    private void validateSeedKey(String key) {
+        if (seedKey != null && !seedKey.isBlank() && !seedKey.equals(key)) {
+            throw new RuntimeException("Invalid seed key");
+        }
+    }
+
     private final UserRepository              userRepository;
     private final TeacherRepository           teacherRepository;
     private final StudentRepository           studentRepository;
@@ -108,7 +117,8 @@ public class DevSeedController {
 
     @Operation(summary = "[DEV] ADMIN 계정 생성/초기화")
     @PostMapping("/seed/admin")
-    public ResponseEntity<ApiResponse<SeedResult>> seedAdmin() {
+    public ResponseEntity<ApiResponse<SeedResult>> seedAdmin(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
         School school = getOrCreateSchool("ADMIN", "시스템관리");
         User admin = upsertUser(ADMIN_EMAIL, ADMIN_PHONE, "관리자", adminPassword, Role.ADMIN, school);
         log.info("[DEV SEED] ADMIN: {}", ADMIN_EMAIL);
@@ -121,7 +131,8 @@ public class DevSeedController {
     @Operation(summary = "[DEV] 전체 역할별 계정 초기화",
                description = "ADMIN/TEACHER/STUDENT/PARENT 계정을 초기화하고 반·수강 관계를 구성합니다.")
     @PostMapping("/seed/all")
-    public ResponseEntity<ApiResponse<SeedAllResult>> seedAll() {
+    public ResponseEntity<ApiResponse<SeedAllResult>> seedAll(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
         List<SeedResult> results = new ArrayList<>();
         School school = getOrCreateSchool(SCHOOL1_CODE, SCHOOL1_NAME);
 
@@ -189,7 +200,8 @@ public class DevSeedController {
     @Operation(summary = "[DEV] 대량 테스트 데이터 생성",
                description = "학생 30명 + 과목 5개 + 성적/피드백/상담 데이터 생성. 부하 테스트용.")
     @PostMapping("/seed/bulk")
-    public ApiResponse<Void> seedBulk() {
+    public ApiResponse<Void> seedBulk(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
         // 1. 교사 확보 (기존 시드의 teacher 사용)
         User teacherUser = userRepository.findByEmail(TEACHER_EMAIL)
                 .orElseThrow(() -> new RuntimeException("먼저 /seed/all 실행 필요"));
@@ -327,7 +339,8 @@ public class DevSeedController {
     @Operation(summary = "[DEV] 대규모 트렌드 분석용 데이터 생성",
                description = "학생 30명 × 3학년도 × 2학기 — 성적/피드백/상담/학생부 데이터 생성. 분석 트렌드 시각화용.")
     @PostMapping("/seed/large")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> seedLarge() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> seedLarge(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
         // 0. 전제: /seed/all 호출 후 교사 존재해야 함
         User teacherUser = userRepository.findByEmail(TEACHER_EMAIL)
                 .orElseThrow(() -> new RuntimeException("먼저 /seed/all 실행 필요"));
@@ -773,7 +786,8 @@ public class DevSeedController {
     @Operation(summary = "[DEV] 새별중학교 시드 데이터 생성",
                description = "새별중학교(School 2) 교사/학생/반 구성. 멀티테넌시 격리 데모용.")
     @PostMapping("/seed/school2")
-    public ResponseEntity<ApiResponse<SeedAllResult>> seedSchool2() {
+    public ResponseEntity<ApiResponse<SeedAllResult>> seedSchool2(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
         School school = getOrCreateSchool(SCHOOL2_CODE, SCHOOL2_NAME);
         List<SeedResult> results = new ArrayList<>();
 
