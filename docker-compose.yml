@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: sscm-postgres
     ports:
       - "${DB_PORT:-5432}:5432"
@@ -55,7 +55,7 @@ services:
   # Analytics DB: 분석 전용 PostgreSQL (운영 DB와 물리적으로 분리)
   # 집계 데이터가 여기에 저장됨 → 대시보드 API는 이 DB만 조회
   postgres-analytics:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: sscm-postgres-analytics
     ports:
       - "5433:5432"                       # 호스트에서는 5433으로 접근 (운영 DB 5432와 구분)

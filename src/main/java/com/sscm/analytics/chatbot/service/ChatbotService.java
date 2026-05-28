@@ -7,6 +7,7 @@ import com.sscm.auth.entity.Student;
 import com.sscm.auth.repository.ParentRepository;
 import com.sscm.auth.repository.ParentStudentRepository;
 import com.sscm.auth.repository.StudentRepository;
+import com.sscm.common.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -17,7 +18,6 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 public class ChatbotService {
 
     private final ChatModel chatModel;
+    private final AiAuditService auditService;
     private final StudentRepository studentRepository;
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
@@ -109,6 +110,9 @@ public class ChatbotService {
             - 데이터에 기반한 객관적인 답변을 제공합니다.
             - 학생의 강점, 약점, 개선 방향을 제안할 수 있습니다.
             - 위험 학생 파악, 반 비교, 과목별 분석 등 다양한 교육 분석을 지원합니다.
+            - '수업 태도 문제가 있는 학생' 같은 의미 기반 질문에는 semanticSearchFeedback이나 semanticSearchCounseling 도구를 사용하세요.
+            - 학기말 종합 의견 요청 시 학년도/학기가 명시되지 않으면 최신 학기(2026년 1학기)를 기본값으로 사용하여 generateStudentReport를 즉시 호출하세요.
+            - 학생의 학기말 종합 의견 초안이 필요하면 generateStudentReport 도구를 사용하세요.
 
             규칙:
             - 반드시 도구를 사용하여 실제 데이터를 조회한 후 답변하세요.
@@ -161,7 +165,10 @@ public class ChatbotService {
             "getStudentFeedbackDetails",
             "getStudentCounselingDetails",
             "getSubjectRanking",
-            "compareClasses"
+            "compareClasses",
+            "semanticSearchFeedback",
+            "semanticSearchCounseling",
+            "generateStudentReport"
     };
 
     private static final String[] STUDENT_TOOLS = {
@@ -179,6 +186,8 @@ public class ChatbotService {
     public ChatResponse chat(String question, String sessionId, Long userId, String role) {
         log.info("AI 챗봇 질문: userId={}, role={}, sessionId={}, question={}", userId, role, sessionId, question);
 
+        long startMs = System.currentTimeMillis();
+        Long capturedSchoolId = TenantContext.getSchoolId(); // 요청 스레드에서 즉시 캡처
         try {
             // 1. 세션 관리
             if (sessionId == null || sessionId.isBlank()) {
@@ -205,10 +214,25 @@ public class ChatbotService {
             // 5. 응답을 세션에 저장
             session.addAssistantMessage(answer);
 
-            log.info("AI 챗봇 응답 완료: sessionId={}", sessionId);
+            // 6. 감사 로그 기록 (동기, 요청 스레드에서 schoolId 직접 전달)
+            long latencyMs = System.currentTimeMillis() - startMs;
+            String intentType = classifyIntent(question);
+            List<String> availableTools = List.of(tools);
+            auditService.logRequest(userId, capturedSchoolId, role, question, intentType, availableTools, null,
+                    answer != null && answer.length() > 200 ? answer.substring(0, 200) : answer,
+                    latencyMs);
+
+            log.info("AI 챗봇 응답 완료: sessionId={}, latency={}ms", sessionId, latencyMs);
             return new ChatResponse(answer, sessionId);
         } catch (Exception e) {
             log.error("AI 챗봇 에러: {}", e.getMessage(), e);
+
+            long latencyMs = System.currentTimeMillis() - startMs;
+            String intentType = classifyIntent(question);
+            List<String> availableTools = List.of(selectTools(role));
+            auditService.logRequest(userId, capturedSchoolId, role, question, intentType, availableTools, null,
+                    "ERROR: " + e.getMessage(), latencyMs);
+
             return new ChatResponse("AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", sessionId);
         }
     }
@@ -239,6 +263,29 @@ public class ChatbotService {
         return studentRepository.findByUser_Id(userId)
                 .map(Student::getId)
                 .orElseThrow(() -> new IllegalStateException("학생 정보를 찾을 수 없습니다: userId=" + userId));
+    }
+
+    /**
+     * 질문 텍스트에서 의도를 간이 분류한다.
+     *
+     * Spring AI의 ChatClient는 실제로 호출된 tool 목록을 반환하지 않으므로,
+     * 질문 키워드 기반으로 의도를 추정한다. 정밀한 분류가 아닌 감사 로그용 참고 정보.
+     */
+    private String classifyIntent(String question) {
+        if (question == null) return "UNKNOWN";
+        if (question.contains("검색") || question.contains("찾아줘") || question.contains("찾아")) {
+            return "SEMANTIC_SEARCH";
+        }
+        if (question.contains("종합 의견") || question.contains("보고서") || question.contains("학기말")) {
+            return "REPORT_GENERATION";
+        }
+        if (question.contains("비교") || question.contains("순위") || question.contains("랭킹")) {
+            return "COMPARISON";
+        }
+        if (question.contains("위험") || question.contains("관심")) {
+            return "AT_RISK_DETECTION";
+        }
+        return "STRUCTURED_QUERY";
     }
 
     private String resolveChildStudentIds(Long userId) {

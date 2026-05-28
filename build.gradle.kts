@@ -56,6 +56,9 @@ dependencies {
 	// Spring AI + Gemini — AI 챗봇 (Tool Use / Function Calling 패턴)
 	// Google AI Studio의 OpenAI 호환 API를 사용
 	implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter")
+	// pgvector-java — JDBC에서 vector 타입 바인딩 지원 (공식 라이브러리)
+	// Spring AI PgVectorStore starter는 사용하지 않음 (커스텀 메타데이터 테이블 사용)
+	implementation("com.pgvector:pgvector:0.1.6")
 	// API Documentation
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 	// Spring AI가 가져온 swagger-core와 springdoc의 swagger-annotations 버전 충돌 해결

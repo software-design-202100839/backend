@@ -1,5 +1,8 @@
 package com.sscm.analytics.chatbot.tools;
 
+import com.sscm.analytics.chatbot.service.EmbeddingService;
+import com.sscm.analytics.chatbot.service.ReportGenerationService;
+import com.sscm.analytics.chatbot.service.ReportGenerationService.ReportResult;
 import com.sscm.analytics.dto.*;
 import com.sscm.analytics.service.AnalyticsDashboardService;
 import com.sscm.auth.entity.Student;
@@ -43,6 +46,8 @@ import java.util.stream.IntStream;
 public class AnalyticsTools {
 
     private final AnalyticsDashboardService dashboardService;
+    private final EmbeddingService embeddingService;
+    private final ReportGenerationService reportGenerationService;
     private final StudentRepository studentRepository;
     private final FeedbackRepository feedbackRepository;
     private final CounselingRepository counselingRepository;
@@ -62,6 +67,9 @@ public class AnalyticsTools {
     public record CounselingDetailRequest(Long studentId) {}
     public record SubjectRankingRequest(Long subjectId, Integer year, Integer semester) {}
     public record CompareClassesRequest(Integer year, Integer grade, Integer classNum1, Integer classNum2) {}
+    public record SemanticSearchRequest(String query, Integer year, Integer semester) {}
+    public record SemanticSearchResult(Long studentId, String preview, String category, double similarity) {}
+    public record ReportRequest(Long studentId, Integer year, Integer semester) {}
 
     // ── Tool 출력 DTO ─────────────────────────────────────────
 
@@ -259,6 +267,73 @@ public class AnalyticsTools {
             ClassStats stats2 = getClassStats(request.year(), request.grade(), request.classNum2());
             return new ClassComparisonResult(stats1, stats2);
         };
+    }
+
+    // ── RAG 시맨틱 검색 Tool ──────────────────────────────────
+
+    @Bean
+    @Description("피드백 텍스트를 의미 기반으로 검색합니다. '수업 태도 문제', '학습 의욕 저하' 같은 자연어 질문으로 관련 피드백을 찾습니다.")
+    public Function<SemanticSearchRequest, List<SemanticSearchResult>> semanticSearchFeedback() {
+        return request -> {
+            log.info("[AI Tool] semanticSearchFeedback 호출: query={}, year={}, semester={}",
+                    request.query(), request.year(), request.semester());
+            Long schoolId = TenantContext.requireSchoolId();
+            return embeddingService.searchFeedback(
+                    request.query(), schoolId, null,
+                    request.year(), request.semester(), 10
+            ).stream().map(row -> new SemanticSearchResult(
+                    toLong(row.get("student_id")),
+                    (String) row.get("content_preview"),
+                    (String) row.get("category"),
+                    toDouble(row.get("similarity"))
+            )).toList();
+        };
+    }
+
+    @Bean
+    @Description("상담 내역을 의미 기반으로 검색합니다. '진로 고민', '교우 관계 갈등' 같은 자연어 질문으로 관련 상담을 찾습니다.")
+    public Function<SemanticSearchRequest, List<SemanticSearchResult>> semanticSearchCounseling() {
+        return request -> {
+            log.info("[AI Tool] semanticSearchCounseling 호출: query={}, year={}, semester={}",
+                    request.query(), request.year(), request.semester());
+            Long schoolId = TenantContext.requireSchoolId();
+            return embeddingService.searchCounseling(
+                    request.query(), schoolId, null,
+                    request.year(), request.semester(), 10
+            ).stream().map(row -> new SemanticSearchResult(
+                    toLong(row.get("student_id")),
+                    (String) row.get("content_preview"),
+                    (String) row.get("category"),
+                    toDouble(row.get("similarity"))
+            )).toList();
+        };
+    }
+
+    // ── 보고서 생성 Tool ──────────────────────────────────────
+
+    @Bean
+    @Description("학생의 학기말 종합 의견 초안을 생성합니다. 성적, 피드백, 상담 기록을 종합하여 근거 기반 보고서를 작성합니다.")
+    public Function<ReportRequest, ReportResult> generateStudentReport() {
+        return request -> {
+            // AI가 학년도/학기를 생략할 수 있으므로 기본값 적용 (최신 학기: 2026년 1학기)
+            int year = request.year() != null ? request.year() : 2026;
+            int semester = request.semester() != null ? request.semester() : 1;
+            log.info("[AI Tool] generateStudentReport 호출: studentId={}, year={}, semester={}",
+                    request.studentId(), year, semester);
+            Long schoolId = TenantContext.requireSchoolId();
+            return reportGenerationService.generateReport(
+                    request.studentId(), year, semester, schoolId, 0L);
+        };
+    }
+
+    private Long toLong(Object value) {
+        if (value instanceof Number n) return n.longValue();
+        return null;
+    }
+
+    private double toDouble(Object value) {
+        if (value instanceof Number n) return n.doubleValue();
+        return 0.0;
     }
 
     private ClassStats getClassStats(int year, int grade, int classNum) {

@@ -13,7 +13,7 @@ SSCM(Smart School Class Management) 프로젝트의 모든 개발 스프린트�
 | 코어 기능 (Sprint 1~4) | 완료 | 성적, 학생부, 상담, 피드백, 알림, 관리자 CRUD |
 | OLAP 분석 파이프라인 | 완료 | Kafka 이벤트 → 분석 DB, 대시보드, 집계 API |
 | 멀티테넌시 (ADR-006) | 완료 | School 엔티티, JWT schoolId, TenantContext, 교차 학교 접근 차단 |
-| AI 챗봇 | 완료 | Spring AI + Gemini 2.5 Flash, 13개 Tool, 역할별 접근 제어, 대화 히스토리 |
+| AI 챗봇 (ADR-007) | 완료 | Hybrid AI — Function Calling 16 tools + RAG(pgvector) + 보고서 생성 + Proactive 알림 + HITL + 감사 로그 |
 | 모니터링 3계층 | 완료 | 앱 10 + 비즈니스 5 + 인프라 4 = 19 Grafana 패널, 5 알림 규칙 |
 | AWS 풀 아키텍처 | 배포 완료 | ECS Fargate + ALB + RDS x2 + Redis + MSK + CloudFront |
 | CI/CD | 완료 | 백엔드: GitHub Actions → ECR → ECS 자동 배포, 프론트: S3 + CloudFront CD |
@@ -21,6 +21,7 @@ SSCM(Smart School Class Management) 프로젝트의 모든 개발 스프린트�
 | 부하 테스트 | 완료 | k6 200VU 기준 p95 791ms, 140 req/s, 에러율 0% |
 | 프론트엔드 UX | 완료 | UI 전면 리디자인 — Collapsible 사이드바, StudentDrawer, PrivacyBadge, 분석 탭, 마크다운 렌더링 |
 | 대규모 시드 데이터 | 완료 | /seed/large: 30명 × 3학년도 × 2학기, 성적 900건, 피드백 544건, 상담 271건, 학생부 903건 |
+| Hybrid AI (ADR-007) | 완료 | RAG(pgvector 의미검색) + 학기말 종합의견 생성 + Proactive 위험알림 + Human-in-the-Loop + AI 감사로그 |
 
 ---
 

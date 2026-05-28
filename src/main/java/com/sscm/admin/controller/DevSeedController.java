@@ -4,6 +4,7 @@ import com.sscm.auth.entity.*;
 import com.sscm.auth.repository.*;
 import com.sscm.analytics.event.*;
 import com.sscm.analytics.event.payload.*;
+import com.sscm.analytics.chatbot.service.EmbeddingService;
 import com.sscm.common.entity.ClassRoom;
 import com.sscm.common.entity.School;
 import com.sscm.common.entity.StudentEnrollment;
@@ -112,6 +113,7 @@ public class DevSeedController {
     private final ApplicationEventPublisher   eventPublisher;
     private final SchoolRepository            schoolRepository;
     private final StudentRecordRepository     studentRecordRepository;
+    private final EmbeddingService             embeddingService;
 
     // ── ADMIN 단독 시드 (기존 호환) ───────────────────────────
 
@@ -824,6 +826,66 @@ public class DevSeedController {
         log.info("[DEV SEED] 새별중학교 시드 완료");
         return ResponseEntity.ok(ApiResponse.success(new SeedAllResult(results,
                 "새별중학교 — 교사: 새별교사, 학생: 새별학생, 1학년 2반 구성 완료")));
+    }
+
+    // ── 피드백/상담 임베딩 시드 ─────────────────────────────────
+
+    @Operation(summary = "[DEV] 피드백/상담 임베딩 생성",
+               description = "기존 피드백/상담 데이터의 텍스트를 임베딩하여 벡터 DB에 저장합니다.")
+    @PostMapping("/seed/embeddings")
+    public ApiResponse<Map<String, Object>> seedEmbeddings(@RequestParam(required = false) String key) {
+        validateSeedKey(key);
+
+        // Get teacher for school context
+        User teacherUser = userRepository.findByEmail(TEACHER_EMAIL)
+            .orElseThrow(() -> new RuntimeException("먼저 /seed/all 실행 필요"));
+        Long schoolId = teacherUser.getSchool().getId();
+
+        // Embed all feedbacks that don't have embeddings yet
+        List<Feedback> feedbacks = feedbackRepository.findAll();
+        int feedbackCount = 0;
+        int feedbackErrors = 0;
+        for (Feedback fb : feedbacks) {
+            try {
+                embeddingService.embedFeedback(
+                    fb.getId(), fb.getStudent().getId(), schoolId,
+                    fb.getYear(), fb.getSemester(),
+                    fb.getCategory().name(), fb.getContent());
+                feedbackCount++;
+            } catch (Exception e) {
+                feedbackErrors++;
+                log.error("피드백 임베딩 실패: feedbackId={}, error={}", fb.getId(), e.getMessage());
+            }
+        }
+
+        // Embed all counselings
+        List<Counseling> counselings = counselingRepository.findAll();
+        int counselingCount = 0;
+        int counselingErrors = 0;
+        for (Counseling cs : counselings) {
+            try {
+                embeddingService.embedCounseling(
+                    cs.getId(), cs.getStudent().getId(), schoolId,
+                    // counseling doesn't have year/semester directly, use counsel date
+                    cs.getCounselDate().getYear(),
+                    cs.getCounselDate().getMonthValue() <= 6 ? 1 : 2,
+                    cs.getCategory().name(), cs.getContent());
+                counselingCount++;
+            } catch (Exception e) {
+                counselingErrors++;
+                log.error("상담 임베딩 실패: counselingId={}, error={}", cs.getId(), e.getMessage());
+            }
+        }
+
+        log.info("[SEED] 임베딩 생성 완료: 피드백 {}건(에러 {}건), 상담 {}건(에러 {}건)",
+            feedbackCount, feedbackErrors, counselingCount, counselingErrors);
+
+        return ApiResponse.success(Map.of(
+            "feedbackEmbeddings", feedbackCount,
+            "feedbackErrors", feedbackErrors,
+            "counselingEmbeddings", counselingCount,
+            "counselingErrors", counselingErrors
+        ));
     }
 
     // ── 내부 헬퍼 ─────────────────────────────────────────────
