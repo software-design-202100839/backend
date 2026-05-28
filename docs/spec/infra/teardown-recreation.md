@@ -254,6 +254,17 @@ TOKEN=$(curl -s -X POST "http://${ALB_DNS}/api/v1/auth/login" \
 curl -X POST "http://${ALB_DNS}/api/v1/analytics/admin/backfill" -H "Authorization: Bearer $TOKEN"
 ```
 
+### Step 11-2: 임베딩 생성 (pgvector)
+```bash
+# 피드백/상담 텍스트 임베딩 (Gemini API 호출, 3~5분 소요)
+curl -X POST "http://${ALB_DNS}/api/v1/dev/seed/embeddings?key=sscm-seed-2026"
+```
+
+**참고:**
+- pgvector 확장은 V10 Flyway 마이그레이션에서 자동 설치됨
+- Docker 이미지는 `pgvector/pgvector:pg16` 사용 (docker-compose.yml)
+- 프로덕션 RDS에서는 `CREATE EXTENSION IF NOT EXISTS vector;` 수동 실행 필요할 수 있음
+
 ### Step 12: 검증
 ```bash
 # 헬스체크
@@ -284,6 +295,8 @@ echo "전체 재배포 완료!"
 | **RDS 데이터 삭제** | DeletionPolicy: Delete라서 스택 삭제 시 영구 삭제. 시드로 복구 |
 | **CloudFront 도메인 변경** | 재생성 시 도메인 바뀜 → SecurityConfig CORS + 프론트 cd.yml 업데이트 필요 |
 | **ALB DNS 변경** | 재생성 시 DNS 바뀜 → prometheus-prod.yml + Grafana 대시보드 업데이트 필요 |
+| **pgvector Docker 이미지** | `pgvector/pgvector:pg16` — 기본 `postgres:16-alpine`이 아님 |
+| **임베딩 생성** | /seed/embeddings → Gemini API 호출 815건, 3~5분 소요 |
 
 ---
 

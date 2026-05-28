@@ -66,6 +66,8 @@
 >
 > pgvector를 선택한 이유는 기존 PostgreSQL에 확장만 추가하면 되어 인프라 비용이 $0입니다. Chroma나 Pinecone은 별도 인프라가 필요합니다.
 >
+> JDBC 바인딩은 pgvector-java 공식 라이브러리(com.pgvector:pgvector)를 사용합니다. PGvector.registerTypes(conn)으로 타입 등록 후 PreparedStatement로 안전하게 벡터를 바인딩합니다.
+>
 > RAG 검색은 단순 벡터 유사도가 아니라 **school_id, 학년도, 역할 범위로 메타데이터 필터링**을 먼저 적용합니다. AI가 전체 데이터를 자유롭게 검색하는 것이 아니라, 현재 사용자가 접근 가능한 범위 안에서만 검색합니다.
 >
 > 학기말 종합 의견 생성은 Function Calling으로 성적을 수집하고, RAG로 피드백·상담 텍스트를 찾고, LLM이 초안을 생성합니다. 교사가 근거를 확인하고 수정한 뒤 저장하는 Human-in-the-Loop 구조입니다. 이것은 Fine-tuning이 아니라 프롬프트 개선입니다.
