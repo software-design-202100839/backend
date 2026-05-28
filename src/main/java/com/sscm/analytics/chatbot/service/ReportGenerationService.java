@@ -10,9 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +72,8 @@ public class ReportGenerationService {
         // 3. LLM 컨텍스트 구성
         String context = buildContext(scoreSummary, dashboard, feedbackResults, counselingResults);
 
+        log.info("보고서 LLM 컨텍스트: length={}", context.length());
+
         // 4. LLM으로 초안 생성
         String prompt = """
                 다음 학생 데이터를 바탕으로 학기말 종합 의견 초안을 작성하세요.
@@ -80,17 +87,22 @@ public class ReportGenerationService {
         String draft = ChatClient.create(chatModel)
                 .prompt()
                 .user(prompt)
+                .options(OpenAiChatOptions.builder().maxTokens(4096).build())
                 .call()
                 .content();
+
+        log.info("보고서 초안 생성됨: length={}, preview={}",
+                draft != null ? draft.length() : 0,
+                draft != null && draft.length() > 100 ? draft.substring(0, 100) + "..." : draft);
 
         // 5. 참조 출처 목록 구성
         List<Map<String, Object>> references = buildReferences(feedbackResults, counselingResults);
 
-        // 6. DB에 보고서 저장
-        saveReport(studentId, schoolId, year, semester, draft, references, userId);
+        // 6. DB에 보고서 저장 → 생성된 ID 반환
+        Long reportId = saveReport(studentId, schoolId, year, semester, draft, references, userId);
 
-        log.info("보고서 생성 완료: studentId={}", studentId);
-        return new ReportResult(draft, references);
+        log.info("보고서 생성 완료: studentId={}, reportId={}", studentId, reportId);
+        return new ReportResult(reportId, draft, references);
     }
 
     // ── 내부 메서드 ─────────────────────────────────────────────
@@ -183,25 +195,54 @@ public class ReportGenerationService {
         return references;
     }
 
-    private void saveReport(Long studentId, Long schoolId, int year, int semester,
+    private Long saveReport(Long studentId, Long schoolId, int year, int semester,
                             String draft, List<Map<String, Object>> references, Long userId) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        String refsJson;
         try {
-            String refsJson = objectMapper.writeValueAsString(references);
-            jdbcTemplate.update(
-                    "INSERT INTO ai_generated_reports (student_id, school_id, academic_year, semester, draft_text, reference_ids, created_by) " +
-                    "VALUES (?, ?, ?, ?, ?, ?::jsonb, ?)",
-                    studentId, schoolId, year, semester, draft, refsJson, userId);
+            refsJson = objectMapper.writeValueAsString(references);
         } catch (JsonProcessingException e) {
             log.error("참조 JSON 직렬화 실패: {}", e.getMessage());
-            // 참조 없이 저장
-            jdbcTemplate.update(
-                    "INSERT INTO ai_generated_reports (student_id, school_id, academic_year, semester, draft_text, created_by) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    studentId, schoolId, year, semester, draft, userId);
+            refsJson = null;
         }
+
+        final String json = refsJson;
+        if (json != null) {
+            jdbcTemplate.update(conn -> {
+                PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO ai_generated_reports (student_id, school_id, academic_year, semester, draft_text, reference_ids, created_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?::jsonb, ?)",
+                        new String[]{"id"});
+                ps.setLong(1, studentId);
+                ps.setLong(2, schoolId);
+                ps.setInt(3, year);
+                ps.setInt(4, semester);
+                ps.setString(5, draft);
+                ps.setString(6, json);
+                ps.setLong(7, userId);
+                return ps;
+            }, keyHolder);
+        } else {
+            jdbcTemplate.update(conn -> {
+                PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO ai_generated_reports (student_id, school_id, academic_year, semester, draft_text, created_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        new String[]{"id"});
+                ps.setLong(1, studentId);
+                ps.setLong(2, schoolId);
+                ps.setInt(3, year);
+                ps.setInt(4, semester);
+                ps.setString(5, draft);
+                ps.setLong(6, userId);
+                return ps;
+            }, keyHolder);
+        }
+
+        Number generatedId = keyHolder.getKey();
+        return generatedId != null ? generatedId.longValue() : null;
     }
 
     // ── 결과 DTO ─────────────────────────────────────────────
 
-    public record ReportResult(String draft, List<Map<String, Object>> references) {}
+    public record ReportResult(Long reportId, String draft, List<Map<String, Object>> references) {}
 }

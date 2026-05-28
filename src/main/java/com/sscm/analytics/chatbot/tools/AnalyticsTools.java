@@ -3,6 +3,7 @@ package com.sscm.analytics.chatbot.tools;
 import com.sscm.analytics.chatbot.service.EmbeddingService;
 import com.sscm.analytics.chatbot.service.ReportGenerationService;
 import com.sscm.analytics.chatbot.service.ReportGenerationService.ReportResult;
+import com.sscm.analytics.chatbot.service.ReportIdHolder;
 import com.sscm.analytics.dto.*;
 import com.sscm.analytics.service.AnalyticsDashboardService;
 import com.sscm.auth.entity.Student;
@@ -321,8 +322,13 @@ public class AnalyticsTools {
             log.info("[AI Tool] generateStudentReport 호출: studentId={}, year={}, semester={}",
                     request.studentId(), year, semester);
             Long schoolId = TenantContext.requireSchoolId();
-            return reportGenerationService.generateReport(
+            ReportResult result = reportGenerationService.generateReport(
                     request.studentId(), year, semester, schoolId, 0L);
+            // Tool 실행 후 reportId를 ThreadLocal에 저장 → ChatbotService가 읽어감
+            if (result.reportId() != null) {
+                ReportIdHolder.set(result.reportId());
+            }
+            return result;
         };
     }
 

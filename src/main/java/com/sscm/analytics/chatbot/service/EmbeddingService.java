@@ -40,7 +40,7 @@ public class EmbeddingService {
     void registerVectorType() {
         try {
             jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) conn -> {
-                PGvector.registerTypes(conn);
+                PGvector.addVectorType(conn);
                 log.info("pgvector 타입 등록 완료");
                 return null;
             });
@@ -60,12 +60,13 @@ public class EmbeddingService {
         float[] embedding = embeddingClient.embed(content);
         String preview = truncate(content, 200);
 
-        executeVectorUpdate(
+        jdbcTemplate.update(
                 "INSERT INTO feedback_embeddings " +
                 "(feedback_id, student_id, school_id, academic_year, semester, category, content_preview, embedding) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?::vector) " +
+                "ON CONFLICT DO NOTHING",
                 feedbackId, studentId, schoolId, year, semester, category, preview,
-                toVector(embedding));
+                toVectorLiteral(embedding));
 
         log.debug("피드백 임베딩 저장 완료: feedbackId={}", feedbackId);
     }
@@ -78,12 +79,13 @@ public class EmbeddingService {
         float[] embedding = embeddingClient.embed(content);
         String preview = truncate(content, 200);
 
-        executeVectorUpdate(
+        jdbcTemplate.update(
                 "INSERT INTO counseling_embeddings " +
                 "(counseling_id, student_id, school_id, academic_year, semester, category, content_preview, embedding) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?::vector) " +
+                "ON CONFLICT DO NOTHING",
                 counselingId, studentId, schoolId, year, semester, category, preview,
-                toVector(embedding));
+                toVectorLiteral(embedding));
 
         log.debug("상담 임베딩 저장 완료: counselingId={}", counselingId);
     }
@@ -108,25 +110,25 @@ public class EmbeddingService {
                                                      List<Long> allowedStudentIds,
                                                      Integer year, Integer semester, int limit) {
         float[] queryEmbedding = embeddingClient.embed(query);
-        PGvector queryVector = toVector(queryEmbedding);
+        String vecLiteral = toVectorLiteral(queryEmbedding);
 
         StringBuilder sql = new StringBuilder(
                 "SELECT fe.feedback_id, fe.student_id, fe.category, fe.content_preview, " +
                 "fe.academic_year, fe.semester, " +
-                "1 - (fe.embedding <=> ?) AS similarity " +
+                "1 - (fe.embedding <=> ?::vector) AS similarity " +
                 "FROM feedback_embeddings fe WHERE fe.school_id = ?");
 
         List<Object> params = new ArrayList<>();
-        params.add(queryVector);
+        params.add(vecLiteral);
         params.add(schoolId);
 
         appendFilters(sql, params, allowedStudentIds, year, semester);
 
-        sql.append(" ORDER BY fe.embedding <=> ? LIMIT ?");
-        params.add(queryVector);
+        sql.append(" ORDER BY fe.embedding <=> ?::vector LIMIT ?");
+        params.add(vecLiteral);
         params.add(limit);
 
-        return executeVectorQuery(sql.toString(), params.toArray());
+        return executeSimpleQuery(sql.toString(), params.toArray());
     }
 
     /**
@@ -136,25 +138,25 @@ public class EmbeddingService {
                                                        List<Long> allowedStudentIds,
                                                        Integer year, Integer semester, int limit) {
         float[] queryEmbedding = embeddingClient.embed(query);
-        PGvector queryVector = toVector(queryEmbedding);
+        String vecLiteral = toVectorLiteral(queryEmbedding);
 
         StringBuilder sql = new StringBuilder(
                 "SELECT ce.counseling_id, ce.student_id, ce.category, ce.content_preview, " +
                 "ce.academic_year, ce.semester, " +
-                "1 - (ce.embedding <=> ?) AS similarity " +
+                "1 - (ce.embedding <=> ?::vector) AS similarity " +
                 "FROM counseling_embeddings ce WHERE ce.school_id = ?");
 
         List<Object> params = new ArrayList<>();
-        params.add(queryVector);
+        params.add(vecLiteral);
         params.add(schoolId);
 
         appendFilters(sql, params, allowedStudentIds, year, semester);
 
-        sql.append(" ORDER BY ce.embedding <=> ? LIMIT ?");
-        params.add(queryVector);
+        sql.append(" ORDER BY ce.embedding <=> ?::vector LIMIT ?");
+        params.add(vecLiteral);
         params.add(limit);
 
-        return executeVectorQuery(sql.toString(), params.toArray());
+        return executeSimpleQuery(sql.toString(), params.toArray());
     }
 
     /**
@@ -162,7 +164,7 @@ public class EmbeddingService {
      */
     private void executeVectorUpdate(String sql, Object... params) {
         jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) conn -> {
-            PGvector.registerTypes(conn);
+            PGvector.addVectorType(conn);
             try (var ps = conn.prepareStatement(sql)) {
                 for (int i = 0; i < params.length; i++) {
                     ps.setObject(i + 1, params[i]);
@@ -180,7 +182,7 @@ public class EmbeddingService {
      */
     private List<Map<String, Object>> executeVectorQuery(String sql, Object[] params) {
         return jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<List<Map<String, Object>>>) conn -> {
-            PGvector.registerTypes(conn);
+            PGvector.addVectorType(conn);
             try (var ps = conn.prepareStatement(sql)) {
                 for (int i = 0; i < params.length; i++) {
                     ps.setObject(i + 1, params[i]);
@@ -226,8 +228,33 @@ public class EmbeddingService {
     }
 
     /**
+     * PGvector 객체 바인딩 대신 문자열 + ::vector 캐스팅으로 벡터를 전달.
+     * pgvector-java의 PGvector.setObject()가 HikariCP + PostgreSQL JDBC 42.7.x에서
+     * "Unknown type vector" 에러를 발생시키는 문제를 우회.
+     * PreparedStatement 파라미터 바인딩이므로 SQL injection 위험 없음.
+     */
+    private List<Map<String, Object>> executeSimpleQuery(String sql, Object[] params) {
+        return jdbcTemplate.queryForList(sql, params);
+    }
+
+    /**
+     * float 배열을 pgvector 리터럴 문자열로 변환.
+     * 예: [0.1, 0.2, 0.3] → "[0.1,0.2,0.3]"
+     * SQL에서 ?::vector로 캐스팅하여 사용.
+     */
+    private String toVectorLiteral(float[] embedding) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < embedding.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append(embedding[i]);
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    /**
      * float 배열을 pgvector-java 공식 PGvector 객체로 변환.
-     * JDBC PreparedStatement에서 setObject로 바인딩 가능.
+     * embedFeedback/embedCounseling 저장용 (executeVectorUpdate에서 사용).
      */
     private PGvector toVector(float[] embedding) {
         return new PGvector(embedding);

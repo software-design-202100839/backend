@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -31,6 +32,17 @@ public class AnalyticsDataSourceConfig {
 
     @Value("${analytics.datasource.password}")
     private String password;
+
+    /**
+     * 운영 DB JdbcTemplate을 @Primary로 명시 등록.
+     * analyticsJdbc 빈과 타입이 동일하므로 @Qualifier 없이 주입되는 서비스에
+     * 운영 DB가 확실히 주입되도록 보장한다.
+     */
+    @Bean
+    @Primary
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
 
     /**
      * 분석 DB 전용 JdbcTemplate.

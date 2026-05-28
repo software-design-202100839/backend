@@ -106,13 +106,24 @@ public class ChatbotService {
 
             역할:
             - 교사가 학생의 학습 현황에 대해 질문하면, 제공된 도구를 사용하여 데이터를 조회하고 분석합니다.
-            - 학생 이름으로 질문하면 먼저 searchStudentByName 도구로 학생을 검색하세요.
             - 데이터에 기반한 객관적인 답변을 제공합니다.
             - 학생의 강점, 약점, 개선 방향을 제안할 수 있습니다.
             - 위험 학생 파악, 반 비교, 과목별 분석 등 다양한 교육 분석을 지원합니다.
             - '수업 태도 문제가 있는 학생' 같은 의미 기반 질문에는 semanticSearchFeedback이나 semanticSearchCounseling 도구를 사용하세요.
             - 학기말 종합 의견 요청 시 학년도/학기가 명시되지 않으면 최신 학기(2026년 1학기)를 기본값으로 사용하여 generateStudentReport를 즉시 호출하세요.
             - 학생의 학기말 종합 의견 초안이 필요하면 generateStudentReport 도구를 사용하세요.
+
+            학생 식별 규칙 (매우 중요):
+            - 사용자가 "학생2", "학생5" 등 이름을 말하면, 반드시 먼저 searchStudentByName 도구로 이름을 검색하세요.
+            - "학생2"라는 이름과 "학생 ID 2"는 다릅니다. 숫자가 포함된 이름이라도 항상 이름 검색을 먼저 하세요.
+            - 검색 결과에서 studentId를 확인한 후에 다른 도구를 호출하세요.
+            - 절대로 이름에 포함된 숫자를 학생 ID로 사용하지 마세요.
+
+            종합 의견 작성 규칙:
+            - "종합 의견 작성해줘", "학기말 의견" 등의 요청이 오면 확인을 묻지 말고 즉시 실행하세요.
+            - 학생 이름이 주어지면 searchStudentByName으로 ID를 찾고, 바로 generateStudentReport를 호출하세요.
+            - 학년도/학기가 명시되지 않으면 2026년 1학기를 기본값으로 사용하세요.
+            - 절대 "생성해 드릴까요?"라고 되묻지 마세요. 바로 생성하세요.
 
             규칙:
             - 반드시 도구를 사용하여 실제 데이터를 조회한 후 답변하세요.
@@ -188,6 +199,10 @@ public class ChatbotService {
 
         long startMs = System.currentTimeMillis();
         Long capturedSchoolId = TenantContext.getSchoolId(); // 요청 스레드에서 즉시 캡처
+
+        // AI 호출 전에 이전 요청의 reportId가 남아있지 않도록 초기화
+        ReportIdHolder.clear();
+
         try {
             // 1. 세션 관리
             if (sessionId == null || sessionId.isBlank()) {
@@ -211,10 +226,13 @@ public class ChatbotService {
                     .call()
                     .content();
 
-            // 5. 응답을 세션에 저장
+            // 5. Tool이 보고서를 생성했으면 reportId를 읽어옴 (일반 질문이면 null)
+            Long reportId = ReportIdHolder.getAndClear();
+
+            // 6. 응답을 세션에 저장
             session.addAssistantMessage(answer);
 
-            // 6. 감사 로그 기록 (동기, 요청 스레드에서 schoolId 직접 전달)
+            // 7. 감사 로그 기록 (동기, 요청 스레드에서 schoolId 직접 전달)
             long latencyMs = System.currentTimeMillis() - startMs;
             String intentType = classifyIntent(question);
             List<String> availableTools = List.of(tools);
@@ -222,8 +240,8 @@ public class ChatbotService {
                     answer != null && answer.length() > 200 ? answer.substring(0, 200) : answer,
                     latencyMs);
 
-            log.info("AI 챗봇 응답 완료: sessionId={}, latency={}ms", sessionId, latencyMs);
-            return new ChatResponse(answer, sessionId);
+            log.info("AI 챗봇 응답 완료: sessionId={}, reportId={}, latency={}ms", sessionId, reportId, latencyMs);
+            return new ChatResponse(answer, sessionId, reportId);
         } catch (Exception e) {
             log.error("AI 챗봇 에러: {}", e.getMessage(), e);
 
@@ -234,6 +252,9 @@ public class ChatbotService {
                     "ERROR: " + e.getMessage(), latencyMs);
 
             return new ChatResponse("AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", sessionId);
+        } finally {
+            // 어떤 경우든 ThreadLocal 정리 — 다음 요청에 reportId가 남지 않도록
+            ReportIdHolder.clear();
         }
     }
 

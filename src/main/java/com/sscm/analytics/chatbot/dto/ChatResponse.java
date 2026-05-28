@@ -1,17 +1,24 @@
 package com.sscm.analytics.chatbot.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class ChatResponse {
-    private String answer;
-    private String sessionId;
+    private final String answer;
+    private final String sessionId;
+    private final Long reportId;
 
-    /** 하위 호환: sessionId 없이 생성 (에러 응답 등) */
-    public ChatResponse(String answer) {
+    public ChatResponse(String answer, String sessionId, Long reportId) {
         this.answer = answer;
-        this.sessionId = null;
+        this.sessionId = sessionId;
+        this.reportId = reportId;
+    }
+
+    public ChatResponse(String answer, String sessionId) {
+        this(answer, sessionId, null);
+    }
+
+    public ChatResponse(String answer) {
+        this(answer, null, null);
     }
 }
