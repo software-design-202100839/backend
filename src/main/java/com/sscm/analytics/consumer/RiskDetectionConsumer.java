@@ -53,7 +53,7 @@ public class RiskDetectionConsumer {
 
     // ── 성적 이벤트 → 성적 하락 감지 ──────────────────────────
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_SCORES, groupId = "sscm-risk-detection")
+    @KafkaListener(id = "risk-score", topics = KafkaConfig.TOPIC_SCORES, groupId = "sscm-risk-detection")
     public void onScoreEvent(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             var payload = event.getPayload();
@@ -74,7 +74,7 @@ public class RiskDetectionConsumer {
 
     // ── 피드백 이벤트 → 부정적 피드백 누적 감지 ──────────────────
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_FEEDBACKS, groupId = "sscm-risk-detection")
+    @KafkaListener(id = "risk-feedback", topics = KafkaConfig.TOPIC_FEEDBACKS, groupId = "sscm-risk-detection")
     public void onFeedbackEvent(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             var payload = event.getPayload();

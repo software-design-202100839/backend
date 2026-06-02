@@ -24,7 +24,7 @@ public class FeedbackAnalyticsConsumer {
 
     private final AnalyticsJdbcRepository analyticsRepo;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_FEEDBACKS, groupId = "sscm-analytics")
+    @KafkaListener(id = "feedback-analytics", topics = KafkaConfig.TOPIC_FEEDBACKS, groupId = "sscm-analytics")
     public void consume(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             log.info("피드백 이벤트 수신: type={}", event.getEventType());

@@ -1,0 +1,650 @@
+
+          /\      |‾‾| /‾‾/   /‾‾/   
+     /\  /  \     |  |/  /   /  /    
+    /  \/    \    |     (   /   ‾‾\  
+   /          \   |  |\  \ |  (‾)  | 
+  / __________ \  |__| \__\ \_____/ .io
+
+     execution: local
+        script: k6/db-sep-case-b2.js
+        output: -
+
+     scenarios: (100.00%) 2 scenarios, 60 max VUs, 3m0s max duration (incl. graceful stop):
+              * olap_queries: 10 looping VUs for 2m30s (exec: olapScenario, gracefulStop: 30s)
+              * oltp_reads: Up to 50 looping VUs for 2m30s over 4 stages (gracefulRampDown: 30s, exec: oltpScenario, gracefulStop: 30s)
+
+
+Run            [ 100% ] setup()
+olap_queries   [   0% ]
+oltp_reads     [   0% ]
+
+running (0m02.0s), 11/60 VUs, 10 complete and 0 interrupted iterations
+olap_queries   [   1% ] 10 VUs     0m00.9s/2m30s
+oltp_reads     [   1% ] 01/50 VUs  0m00.9s/2m30.0s
+
+running (0m03.0s), 12/60 VUs, 24 complete and 0 interrupted iterations
+olap_queries   [   1% ] 10 VUs     0m01.9s/2m30s
+oltp_reads     [   1% ] 02/50 VUs  0m01.9s/2m30.0s
+
+running (0m04.0s), 13/60 VUs, 42 complete and 0 interrupted iterations
+olap_queries   [   2% ] 10 VUs     0m02.9s/2m30s
+oltp_reads     [   2% ] 03/50 VUs  0m02.9s/2m30.0s
+
+running (0m05.0s), 15/60 VUs, 75 complete and 0 interrupted iterations
+olap_queries   [   3% ] 10 VUs     0m03.9s/2m30s
+oltp_reads     [   3% ] 05/50 VUs  0m03.9s/2m30.0s
+
+running (0m06.0s), 16/60 VUs, 101 complete and 0 interrupted iterations
+olap_queries   [   3% ] 10 VUs     0m04.9s/2m30s
+oltp_reads     [   3% ] 06/50 VUs  0m04.9s/2m30.0s
+
+running (0m07.0s), 17/60 VUs, 140 complete and 0 interrupted iterations
+olap_queries   [   4% ] 10 VUs     0m05.9s/2m30s
+oltp_reads     [   4% ] 07/50 VUs  0m05.9s/2m30.0s
+
+running (0m08.0s), 19/60 VUs, 180 complete and 0 interrupted iterations
+olap_queries   [   5% ] 10 VUs     0m06.9s/2m30s
+oltp_reads     [   5% ] 09/50 VUs  0m06.9s/2m30.0s
+
+running (0m09.0s), 20/60 VUs, 229 complete and 0 interrupted iterations
+olap_queries   [   5% ] 10 VUs     0m07.9s/2m30s
+oltp_reads     [   5% ] 10/50 VUs  0m07.9s/2m30.0s
+
+running (0m10.0s), 21/60 VUs, 286 complete and 0 interrupted iterations
+olap_queries   [   6% ] 10 VUs     0m08.9s/2m30s
+oltp_reads     [   6% ] 11/50 VUs  0m08.9s/2m30.0s
+
+running (0m11.0s), 23/60 VUs, 345 complete and 0 interrupted iterations
+olap_queries   [   7% ] 10 VUs     0m09.9s/2m30s
+oltp_reads     [   7% ] 13/50 VUs  0m09.9s/2m30.0s
+
+running (0m12.0s), 24/60 VUs, 420 complete and 0 interrupted iterations
+olap_queries   [   7% ] 10 VUs     0m10.9s/2m30s
+oltp_reads     [   7% ] 14/50 VUs  0m10.9s/2m30.0s
+
+running (0m13.0s), 25/60 VUs, 486 complete and 0 interrupted iterations
+olap_queries   [   8% ] 10 VUs     0m11.9s/2m30s
+oltp_reads     [   8% ] 15/50 VUs  0m11.9s/2m30.0s
+
+running (0m14.0s), 27/60 VUs, 567 complete and 0 interrupted iterations
+olap_queries   [   9% ] 10 VUs     0m12.9s/2m30s
+oltp_reads     [   9% ] 17/50 VUs  0m12.9s/2m30.0s
+
+running (0m15.0s), 28/60 VUs, 642 complete and 0 interrupted iterations
+olap_queries   [   9% ] 10 VUs     0m13.9s/2m30s
+oltp_reads     [   9% ] 18/50 VUs  0m13.9s/2m30.0s
+
+running (0m16.0s), 29/60 VUs, 734 complete and 0 interrupted iterations
+olap_queries   [  10% ] 10 VUs     0m14.9s/2m30s
+oltp_reads     [  10% ] 19/50 VUs  0m14.9s/2m30.0s
+
+running (0m17.0s), 30/60 VUs, 810 complete and 0 interrupted iterations
+olap_queries   [  11% ] 10 VUs     0m15.9s/2m30s
+oltp_reads     [  11% ] 20/50 VUs  0m15.9s/2m30.0s
+
+running (0m18.0s), 30/60 VUs, 897 complete and 0 interrupted iterations
+olap_queries   [  11% ] 10 VUs     0m16.9s/2m30s
+oltp_reads     [  11% ] 20/50 VUs  0m16.9s/2m30.0s
+
+running (0m19.0s), 31/60 VUs, 997 complete and 0 interrupted iterations
+olap_queries   [  12% ] 10 VUs     0m17.9s/2m30s
+oltp_reads     [  12% ] 21/50 VUs  0m17.9s/2m30.0s
+
+running (0m20.0s), 31/60 VUs, 1090 complete and 0 interrupted iterations
+olap_queries   [  13% ] 10 VUs     0m18.9s/2m30s
+oltp_reads     [  13% ] 21/50 VUs  0m18.9s/2m30.0s
+
+running (0m21.0s), 32/60 VUs, 1194 complete and 0 interrupted iterations
+olap_queries   [  13% ] 10 VUs     0m19.9s/2m30s
+oltp_reads     [  13% ] 22/50 VUs  0m19.9s/2m30.0s
+
+running (0m22.0s), 32/60 VUs, 1285 complete and 0 interrupted iterations
+olap_queries   [  14% ] 10 VUs     0m20.9s/2m30s
+oltp_reads     [  14% ] 22/50 VUs  0m20.9s/2m30.0s
+
+running (0m23.0s), 33/60 VUs, 1387 complete and 0 interrupted iterations
+olap_queries   [  15% ] 10 VUs     0m21.9s/2m30s
+oltp_reads     [  15% ] 23/50 VUs  0m21.9s/2m30.0s
+
+running (0m24.0s), 33/60 VUs, 1488 complete and 0 interrupted iterations
+olap_queries   [  15% ] 10 VUs     0m22.9s/2m30s
+oltp_reads     [  15% ] 23/50 VUs  0m22.9s/2m30.0s
+
+running (0m25.0s), 34/60 VUs, 1591 complete and 0 interrupted iterations
+olap_queries   [  16% ] 10 VUs     0m23.9s/2m30s
+oltp_reads     [  16% ] 24/50 VUs  0m23.9s/2m30.0s
+
+running (0m26.0s), 34/60 VUs, 1687 complete and 0 interrupted iterations
+olap_queries   [  17% ] 10 VUs     0m24.9s/2m30s
+oltp_reads     [  17% ] 24/50 VUs  0m24.9s/2m30.0s
+
+running (0m27.0s), 35/60 VUs, 1795 complete and 0 interrupted iterations
+olap_queries   [  17% ] 10 VUs     0m25.9s/2m30s
+oltp_reads     [  17% ] 25/50 VUs  0m25.9s/2m30.0s
+
+running (0m28.0s), 35/60 VUs, 1899 complete and 0 interrupted iterations
+olap_queries   [  18% ] 10 VUs     0m26.9s/2m30s
+oltp_reads     [  18% ] 25/50 VUs  0m26.9s/2m30.0s
+
+running (0m29.0s), 36/60 VUs, 2016 complete and 0 interrupted iterations
+olap_queries   [  19% ] 10 VUs     0m27.9s/2m30s
+oltp_reads     [  19% ] 26/50 VUs  0m27.9s/2m30.0s
+
+running (0m30.0s), 36/60 VUs, 2132 complete and 0 interrupted iterations
+olap_queries   [  19% ] 10 VUs     0m28.9s/2m30s
+oltp_reads     [  19% ] 26/50 VUs  0m28.9s/2m30.0s
+
+running (0m31.0s), 37/60 VUs, 2255 complete and 0 interrupted iterations
+olap_queries   [  20% ] 10 VUs     0m29.9s/2m30s
+oltp_reads     [  20% ] 27/50 VUs  0m29.9s/2m30.0s
+
+running (0m32.0s), 37/60 VUs, 2374 complete and 0 interrupted iterations
+olap_queries   [  21% ] 10 VUs     0m30.9s/2m30s
+oltp_reads     [  21% ] 27/50 VUs  0m30.9s/2m30.0s
+
+running (0m33.0s), 38/60 VUs, 2495 complete and 0 interrupted iterations
+olap_queries   [  21% ] 10 VUs     0m31.9s/2m30s
+oltp_reads     [  21% ] 28/50 VUs  0m31.9s/2m30.0s
+
+running (0m34.0s), 38/60 VUs, 2620 complete and 0 interrupted iterations
+olap_queries   [  22% ] 10 VUs     0m32.9s/2m30s
+oltp_reads     [  22% ] 28/50 VUs  0m32.9s/2m30.0s
+
+running (0m35.0s), 39/60 VUs, 2743 complete and 0 interrupted iterations
+olap_queries   [  23% ] 10 VUs     0m33.9s/2m30s
+oltp_reads     [  23% ] 29/50 VUs  0m33.9s/2m30.0s
+
+running (0m36.0s), 39/60 VUs, 2870 complete and 0 interrupted iterations
+olap_queries   [  23% ] 10 VUs     0m34.9s/2m30s
+oltp_reads     [  23% ] 29/50 VUs  0m34.9s/2m30.0s
+
+running (0m37.0s), 40/60 VUs, 2990 complete and 0 interrupted iterations
+olap_queries   [  24% ] 10 VUs     0m35.9s/2m30s
+oltp_reads     [  24% ] 30/50 VUs  0m35.9s/2m30.0s
+
+running (0m38.0s), 40/60 VUs, 3124 complete and 0 interrupted iterations
+olap_queries   [  25% ] 10 VUs     0m36.9s/2m30s
+oltp_reads     [  25% ] 30/50 VUs  0m36.9s/2m30.0s
+
+running (0m39.0s), 41/60 VUs, 3254 complete and 0 interrupted iterations
+olap_queries   [  25% ] 10 VUs     0m37.9s/2m30s
+oltp_reads     [  25% ] 31/50 VUs  0m37.9s/2m30.0s
+
+running (0m40.0s), 41/60 VUs, 3387 complete and 0 interrupted iterations
+olap_queries   [  26% ] 10 VUs     0m38.9s/2m30s
+oltp_reads     [  26% ] 31/50 VUs  0m38.9s/2m30.0s
+
+running (0m41.0s), 42/60 VUs, 3513 complete and 0 interrupted iterations
+olap_queries   [  27% ] 10 VUs     0m39.9s/2m30s
+oltp_reads     [  27% ] 32/50 VUs  0m39.9s/2m30.0s
+
+running (0m42.0s), 42/60 VUs, 3656 complete and 0 interrupted iterations
+olap_queries   [  27% ] 10 VUs     0m40.9s/2m30s
+oltp_reads     [  27% ] 32/50 VUs  0m40.9s/2m30.0s
+
+running (0m43.0s), 43/60 VUs, 3792 complete and 0 interrupted iterations
+olap_queries   [  28% ] 10 VUs     0m41.9s/2m30s
+oltp_reads     [  28% ] 33/50 VUs  0m41.9s/2m30.0s
+
+running (0m44.0s), 43/60 VUs, 3938 complete and 0 interrupted iterations
+olap_queries   [  29% ] 10 VUs     0m42.9s/2m30s
+oltp_reads     [  29% ] 33/50 VUs  0m42.9s/2m30.0s
+
+running (0m45.0s), 44/60 VUs, 4070 complete and 0 interrupted iterations
+olap_queries   [  29% ] 10 VUs     0m43.9s/2m30s
+oltp_reads     [  29% ] 34/50 VUs  0m43.9s/2m30.0s
+
+running (0m46.0s), 44/60 VUs, 4217 complete and 0 interrupted iterations
+olap_queries   [  30% ] 10 VUs     0m44.9s/2m30s
+oltp_reads     [  30% ] 34/50 VUs  0m44.9s/2m30.0s
+
+running (0m47.0s), 45/60 VUs, 4361 complete and 0 interrupted iterations
+olap_queries   [  31% ] 10 VUs     0m45.9s/2m30s
+oltp_reads     [  31% ] 35/50 VUs  0m45.9s/2m30.0s
+
+running (0m48.0s), 45/60 VUs, 4519 complete and 0 interrupted iterations
+olap_queries   [  31% ] 10 VUs     0m46.9s/2m30s
+oltp_reads     [  31% ] 35/50 VUs  0m46.9s/2m30.0s
+
+running (0m49.0s), 46/60 VUs, 4667 complete and 0 interrupted iterations
+olap_queries   [  32% ] 10 VUs     0m47.9s/2m30s
+oltp_reads     [  32% ] 36/50 VUs  0m47.9s/2m30.0s
+
+running (0m50.0s), 46/60 VUs, 4815 complete and 0 interrupted iterations
+olap_queries   [  33% ] 10 VUs     0m48.9s/2m30s
+oltp_reads     [  33% ] 36/50 VUs  0m48.9s/2m30.0s
+
+running (0m51.0s), 47/60 VUs, 4970 complete and 0 interrupted iterations
+olap_queries   [  33% ] 10 VUs     0m49.9s/2m30s
+oltp_reads     [  33% ] 37/50 VUs  0m49.9s/2m30.0s
+
+running (0m52.0s), 47/60 VUs, 5121 complete and 0 interrupted iterations
+olap_queries   [  34% ] 10 VUs     0m50.9s/2m30s
+oltp_reads     [  34% ] 37/50 VUs  0m50.9s/2m30.0s
+
+running (0m53.0s), 48/60 VUs, 5282 complete and 0 interrupted iterations
+olap_queries   [  35% ] 10 VUs     0m51.9s/2m30s
+oltp_reads     [  35% ] 38/50 VUs  0m51.9s/2m30.0s
+
+running (0m54.0s), 48/60 VUs, 5432 complete and 0 interrupted iterations
+olap_queries   [  35% ] 10 VUs     0m52.9s/2m30s
+oltp_reads     [  35% ] 38/50 VUs  0m52.9s/2m30.0s
+
+running (0m55.0s), 49/60 VUs, 5595 complete and 0 interrupted iterations
+olap_queries   [  36% ] 10 VUs     0m53.9s/2m30s
+oltp_reads     [  36% ] 39/50 VUs  0m53.9s/2m30.0s
+
+running (0m56.0s), 49/60 VUs, 5758 complete and 0 interrupted iterations
+olap_queries   [  37% ] 10 VUs     0m54.9s/2m30s
+oltp_reads     [  37% ] 39/50 VUs  0m54.9s/2m30.0s
+
+running (0m57.0s), 50/60 VUs, 5926 complete and 0 interrupted iterations
+olap_queries   [  37% ] 10 VUs     0m55.9s/2m30s
+oltp_reads     [  37% ] 40/50 VUs  0m55.9s/2m30.0s
+
+running (0m58.1s), 50/60 VUs, 6092 complete and 0 interrupted iterations
+olap_queries   [  38% ] 10 VUs     0m56.9s/2m30s
+oltp_reads     [  38% ] 40/50 VUs  0m56.9s/2m30.0s
+
+running (0m59.0s), 51/60 VUs, 6265 complete and 0 interrupted iterations
+olap_queries   [  39% ] 10 VUs     0m57.9s/2m30s
+oltp_reads     [  39% ] 41/50 VUs  0m57.9s/2m30.0s
+
+running (1m00.0s), 51/60 VUs, 6444 complete and 0 interrupted iterations
+olap_queries   [  39% ] 10 VUs     0m58.9s/2m30s
+oltp_reads     [  39% ] 41/50 VUs  0m58.9s/2m30.0s
+
+running (1m01.1s), 52/60 VUs, 6612 complete and 0 interrupted iterations
+olap_queries   [  40% ] 10 VUs     0m59.9s/2m30s
+oltp_reads     [  40% ] 42/50 VUs  0m59.9s/2m30.0s
+
+running (1m02.0s), 52/60 VUs, 6795 complete and 0 interrupted iterations
+olap_queries   [  41% ] 10 VUs     1m00.9s/2m30s
+oltp_reads     [  41% ] 42/50 VUs  1m00.9s/2m30.0s
+
+running (1m03.1s), 53/60 VUs, 6977 complete and 0 interrupted iterations
+olap_queries   [  41% ] 10 VUs     1m01.9s/2m30s
+oltp_reads     [  41% ] 43/50 VUs  1m01.9s/2m30.0s
+
+running (1m04.0s), 53/60 VUs, 7164 complete and 0 interrupted iterations
+olap_queries   [  42% ] 10 VUs     1m02.9s/2m30s
+oltp_reads     [  42% ] 43/50 VUs  1m02.9s/2m30.0s
+
+running (1m05.0s), 54/60 VUs, 7351 complete and 0 interrupted iterations
+olap_queries   [  43% ] 10 VUs     1m03.9s/2m30s
+oltp_reads     [  43% ] 44/50 VUs  1m03.9s/2m30.0s
+
+running (1m06.1s), 54/60 VUs, 7539 complete and 0 interrupted iterations
+olap_queries   [  43% ] 10 VUs     1m04.9s/2m30s
+oltp_reads     [  43% ] 44/50 VUs  1m04.9s/2m30.0s
+
+running (1m07.1s), 55/60 VUs, 7714 complete and 0 interrupted iterations
+olap_queries   [  44% ] 10 VUs     1m05.9s/2m30s
+oltp_reads     [  44% ] 45/50 VUs  1m05.9s/2m30.0s
+
+running (1m08.0s), 55/60 VUs, 7909 complete and 0 interrupted iterations
+olap_queries   [  45% ] 10 VUs     1m06.9s/2m30s
+oltp_reads     [  45% ] 45/50 VUs  1m06.9s/2m30.0s
+
+running (1m09.0s), 56/60 VUs, 8092 complete and 0 interrupted iterations
+olap_queries   [  45% ] 10 VUs     1m07.9s/2m30s
+oltp_reads     [  45% ] 46/50 VUs  1m07.9s/2m30.0s
+
+running (1m10.0s), 56/60 VUs, 8291 complete and 0 interrupted iterations
+olap_queries   [  46% ] 10 VUs     1m08.9s/2m30s
+oltp_reads     [  46% ] 46/50 VUs  1m08.9s/2m30.0s
+
+running (1m11.0s), 57/60 VUs, 8486 complete and 0 interrupted iterations
+olap_queries   [  47% ] 10 VUs     1m09.9s/2m30s
+oltp_reads     [  47% ] 47/50 VUs  1m09.9s/2m30.0s
+
+running (1m12.0s), 57/60 VUs, 8695 complete and 0 interrupted iterations
+olap_queries   [  47% ] 10 VUs     1m10.9s/2m30s
+oltp_reads     [  47% ] 47/50 VUs  1m10.9s/2m30.0s
+
+running (1m13.1s), 58/60 VUs, 8885 complete and 0 interrupted iterations
+olap_queries   [  48% ] 10 VUs     1m11.9s/2m30s
+oltp_reads     [  48% ] 48/50 VUs  1m11.9s/2m30.0s
+
+running (1m14.0s), 58/60 VUs, 9092 complete and 0 interrupted iterations
+olap_queries   [  49% ] 10 VUs     1m12.9s/2m30s
+oltp_reads     [  49% ] 48/50 VUs  1m12.9s/2m30.0s
+
+running (1m15.0s), 59/60 VUs, 9287 complete and 0 interrupted iterations
+olap_queries   [  49% ] 10 VUs     1m13.9s/2m30s
+oltp_reads     [  49% ] 49/50 VUs  1m13.9s/2m30.0s
+
+running (1m16.1s), 59/60 VUs, 9493 complete and 0 interrupted iterations
+olap_queries   [  50% ] 10 VUs     1m14.9s/2m30s
+oltp_reads     [  50% ] 49/50 VUs  1m14.9s/2m30.0s
+
+running (1m17.0s), 60/60 VUs, 9699 complete and 0 interrupted iterations
+olap_queries   [  51% ] 10 VUs     1m15.9s/2m30s
+oltp_reads     [  51% ] 50/50 VUs  1m15.9s/2m30.0s
+
+running (1m18.0s), 60/60 VUs, 9903 complete and 0 interrupted iterations
+olap_queries   [  51% ] 10 VUs     1m16.9s/2m30s
+oltp_reads     [  51% ] 50/50 VUs  1m16.9s/2m30.0s
+
+running (1m19.0s), 60/60 VUs, 10110 complete and 0 interrupted iterations
+olap_queries   [  52% ] 10 VUs     1m17.9s/2m30s
+oltp_reads     [  52% ] 50/50 VUs  1m17.9s/2m30.0s
+
+running (1m20.0s), 60/60 VUs, 10319 complete and 0 interrupted iterations
+olap_queries   [  53% ] 10 VUs     1m18.9s/2m30s
+oltp_reads     [  53% ] 50/50 VUs  1m18.9s/2m30.0s
+
+running (1m21.0s), 60/60 VUs, 10522 complete and 0 interrupted iterations
+olap_queries   [  53% ] 10 VUs     1m19.9s/2m30s
+oltp_reads     [  53% ] 50/50 VUs  1m19.9s/2m30.0s
+
+running (1m22.0s), 60/60 VUs, 10718 complete and 0 interrupted iterations
+olap_queries   [  54% ] 10 VUs     1m20.9s/2m30s
+oltp_reads     [  54% ] 50/50 VUs  1m20.9s/2m30.0s
+
+running (1m23.1s), 60/60 VUs, 10916 complete and 0 interrupted iterations
+olap_queries   [  55% ] 10 VUs     1m21.9s/2m30s
+oltp_reads     [  55% ] 50/50 VUs  1m21.9s/2m30.0s
+
+running (1m24.0s), 60/60 VUs, 11132 complete and 0 interrupted iterations
+olap_queries   [  55% ] 10 VUs     1m22.9s/2m30s
+oltp_reads     [  55% ] 50/50 VUs  1m22.9s/2m30.0s
+
+running (1m25.0s), 60/60 VUs, 11335 complete and 0 interrupted iterations
+olap_queries   [  56% ] 10 VUs     1m23.9s/2m30s
+oltp_reads     [  56% ] 50/50 VUs  1m23.9s/2m30.0s
+
+running (1m26.0s), 60/60 VUs, 11544 complete and 0 interrupted iterations
+olap_queries   [  57% ] 10 VUs     1m24.9s/2m30s
+oltp_reads     [  57% ] 50/50 VUs  1m24.9s/2m30.0s
+
+running (1m27.0s), 60/60 VUs, 11770 complete and 0 interrupted iterations
+olap_queries   [  57% ] 10 VUs     1m25.9s/2m30s
+oltp_reads     [  57% ] 50/50 VUs  1m25.9s/2m30.0s
+
+running (1m28.1s), 60/60 VUs, 11988 complete and 0 interrupted iterations
+olap_queries   [  58% ] 10 VUs     1m26.9s/2m30s
+oltp_reads     [  58% ] 50/50 VUs  1m26.9s/2m30.0s
+
+running (1m29.1s), 60/60 VUs, 12215 complete and 0 interrupted iterations
+olap_queries   [  59% ] 10 VUs     1m27.9s/2m30s
+oltp_reads     [  59% ] 50/50 VUs  1m27.9s/2m30.0s
+
+running (1m30.1s), 60/60 VUs, 12426 complete and 0 interrupted iterations
+olap_queries   [  59% ] 10 VUs     1m28.9s/2m30s
+oltp_reads     [  59% ] 50/50 VUs  1m28.9s/2m30.0s
+
+running (1m31.1s), 60/60 VUs, 12629 complete and 0 interrupted iterations
+olap_queries   [  60% ] 10 VUs     1m29.9s/2m30s
+oltp_reads     [  60% ] 50/50 VUs  1m29.9s/2m30.0s
+
+running (1m32.1s), 60/60 VUs, 12843 complete and 0 interrupted iterations
+olap_queries   [  61% ] 10 VUs     1m30.9s/2m30s
+oltp_reads     [  61% ] 50/50 VUs  1m30.9s/2m30.0s
+
+running (1m33.1s), 60/60 VUs, 13050 complete and 0 interrupted iterations
+olap_queries   [  61% ] 10 VUs     1m31.9s/2m30s
+oltp_reads     [  61% ] 50/50 VUs  1m31.9s/2m30.0s
+
+running (1m34.1s), 60/60 VUs, 13269 complete and 0 interrupted iterations
+olap_queries   [  62% ] 10 VUs     1m32.9s/2m30s
+oltp_reads     [  62% ] 50/50 VUs  1m32.9s/2m30.0s
+
+running (1m35.1s), 60/60 VUs, 13466 complete and 0 interrupted iterations
+olap_queries   [  63% ] 10 VUs     1m33.9s/2m30s
+oltp_reads     [  63% ] 50/50 VUs  1m33.9s/2m30.0s
+
+running (1m36.1s), 60/60 VUs, 13669 complete and 0 interrupted iterations
+olap_queries   [  63% ] 10 VUs     1m34.9s/2m30s
+oltp_reads     [  63% ] 50/50 VUs  1m34.9s/2m30.0s
+
+running (1m37.1s), 60/60 VUs, 13882 complete and 0 interrupted iterations
+olap_queries   [  64% ] 10 VUs     1m35.9s/2m30s
+oltp_reads     [  64% ] 50/50 VUs  1m35.9s/2m30.0s
+
+running (1m38.1s), 60/60 VUs, 14087 complete and 0 interrupted iterations
+olap_queries   [  65% ] 10 VUs     1m36.9s/2m30s
+oltp_reads     [  65% ] 50/50 VUs  1m36.9s/2m30.0s
+
+running (1m39.1s), 60/60 VUs, 14293 complete and 0 interrupted iterations
+olap_queries   [  65% ] 10 VUs     1m37.9s/2m30s
+oltp_reads     [  65% ] 50/50 VUs  1m37.9s/2m30.0s
+
+running (1m40.1s), 60/60 VUs, 14507 complete and 0 interrupted iterations
+olap_queries   [  66% ] 10 VUs     1m38.9s/2m30s
+oltp_reads     [  66% ] 50/50 VUs  1m38.9s/2m30.0s
+
+running (1m41.1s), 60/60 VUs, 14721 complete and 0 interrupted iterations
+olap_queries   [  67% ] 10 VUs     1m39.9s/2m30s
+oltp_reads     [  67% ] 50/50 VUs  1m39.9s/2m30.0s
+
+running (1m42.1s), 60/60 VUs, 14928 complete and 0 interrupted iterations
+olap_queries   [  67% ] 10 VUs     1m40.9s/2m30s
+oltp_reads     [  67% ] 50/50 VUs  1m40.9s/2m30.0s
+
+running (1m43.1s), 60/60 VUs, 15146 complete and 0 interrupted iterations
+olap_queries   [  68% ] 10 VUs     1m41.9s/2m30s
+oltp_reads     [  68% ] 50/50 VUs  1m41.9s/2m30.0s
+
+running (1m44.1s), 60/60 VUs, 15349 complete and 0 interrupted iterations
+olap_queries   [  69% ] 10 VUs     1m42.9s/2m30s
+oltp_reads     [  69% ] 50/50 VUs  1m42.9s/2m30.0s
+
+running (1m45.1s), 60/60 VUs, 15560 complete and 0 interrupted iterations
+olap_queries   [  69% ] 10 VUs     1m43.9s/2m30s
+oltp_reads     [  69% ] 50/50 VUs  1m43.9s/2m30.0s
+
+running (1m46.1s), 60/60 VUs, 15762 complete and 0 interrupted iterations
+olap_queries   [  70% ] 10 VUs     1m44.9s/2m30s
+oltp_reads     [  70% ] 50/50 VUs  1m44.9s/2m30.0s
+
+running (1m47.1s), 60/60 VUs, 15975 complete and 0 interrupted iterations
+olap_queries   [  71% ] 10 VUs     1m45.9s/2m30s
+oltp_reads     [  71% ] 50/50 VUs  1m45.9s/2m30.0s
+
+running (1m48.1s), 60/60 VUs, 16183 complete and 0 interrupted iterations
+olap_queries   [  71% ] 10 VUs     1m46.9s/2m30s
+oltp_reads     [  71% ] 50/50 VUs  1m46.9s/2m30.0s
+
+running (1m49.1s), 60/60 VUs, 16384 complete and 0 interrupted iterations
+olap_queries   [  72% ] 10 VUs     1m47.9s/2m30s
+oltp_reads     [  72% ] 50/50 VUs  1m47.9s/2m30.0s
+
+running (1m50.1s), 60/60 VUs, 16592 complete and 0 interrupted iterations
+olap_queries   [  73% ] 10 VUs     1m48.9s/2m30s
+oltp_reads     [  73% ] 50/50 VUs  1m48.9s/2m30.0s
+
+running (1m51.1s), 60/60 VUs, 16791 complete and 0 interrupted iterations
+olap_queries   [  73% ] 10 VUs     1m49.9s/2m30s
+oltp_reads     [  73% ] 50/50 VUs  1m49.9s/2m30.0s
+
+running (1m52.1s), 60/60 VUs, 16995 complete and 0 interrupted iterations
+olap_queries   [  74% ] 10 VUs     1m50.9s/2m30s
+oltp_reads     [  74% ] 50/50 VUs  1m50.9s/2m30.0s
+
+running (1m53.1s), 60/60 VUs, 17201 complete and 0 interrupted iterations
+olap_queries   [  75% ] 10 VUs     1m51.9s/2m30s
+oltp_reads     [  75% ] 50/50 VUs  1m51.9s/2m30.0s
+
+running (1m54.1s), 60/60 VUs, 17402 complete and 0 interrupted iterations
+olap_queries   [  75% ] 10 VUs     1m52.9s/2m30s
+oltp_reads     [  75% ] 50/50 VUs  1m52.9s/2m30.0s
+
+running (1m55.1s), 60/60 VUs, 17610 complete and 0 interrupted iterations
+olap_queries   [  76% ] 10 VUs     1m53.9s/2m30s
+oltp_reads     [  76% ] 50/50 VUs  1m53.9s/2m30.0s
+
+running (1m56.1s), 60/60 VUs, 17814 complete and 0 interrupted iterations
+olap_queries   [  77% ] 10 VUs     1m54.9s/2m30s
+oltp_reads     [  77% ] 50/50 VUs  1m54.9s/2m30.0s
+
+running (1m57.1s), 60/60 VUs, 18020 complete and 0 interrupted iterations
+olap_queries   [  77% ] 10 VUs     1m55.9s/2m30s
+oltp_reads     [  77% ] 50/50 VUs  1m55.9s/2m30.0s
+
+running (1m58.0s), 60/60 VUs, 18225 complete and 0 interrupted iterations
+olap_queries   [  78% ] 10 VUs     1m56.9s/2m30s
+oltp_reads     [  78% ] 50/50 VUs  1m56.9s/2m30.0s
+
+running (1m59.0s), 60/60 VUs, 18430 complete and 0 interrupted iterations
+olap_queries   [  79% ] 10 VUs     1m57.9s/2m30s
+oltp_reads     [  79% ] 50/50 VUs  1m57.9s/2m30.0s
+
+running (2m00.0s), 60/60 VUs, 18628 complete and 0 interrupted iterations
+olap_queries   [  79% ] 10 VUs     1m58.9s/2m30s
+oltp_reads     [  79% ] 50/50 VUs  1m58.9s/2m30.0s
+
+running (2m01.0s), 60/60 VUs, 18834 complete and 0 interrupted iterations
+olap_queries   [  80% ] 10 VUs     1m59.9s/2m30s
+oltp_reads     [  80% ] 50/50 VUs  1m59.9s/2m30.0s
+
+running (2m02.0s), 60/60 VUs, 19039 complete and 0 interrupted iterations
+olap_queries   [  81% ] 10 VUs     2m00.9s/2m30s
+oltp_reads     [  81% ] 50/50 VUs  2m00.9s/2m30.0s
+
+running (2m03.0s), 60/60 VUs, 19252 complete and 0 interrupted iterations
+olap_queries   [  81% ] 10 VUs     2m01.9s/2m30s
+oltp_reads     [  81% ] 50/50 VUs  2m01.9s/2m30.0s
+
+running (2m04.0s), 60/60 VUs, 19452 complete and 0 interrupted iterations
+olap_queries   [  82% ] 10 VUs     2m02.9s/2m30s
+oltp_reads     [  82% ] 50/50 VUs  2m02.9s/2m30.0s
+
+running (2m05.0s), 60/60 VUs, 19651 complete and 0 interrupted iterations
+olap_queries   [  83% ] 10 VUs     2m03.9s/2m30s
+oltp_reads     [  83% ] 50/50 VUs  2m03.9s/2m30.0s
+
+running (2m06.0s), 60/60 VUs, 19866 complete and 0 interrupted iterations
+olap_queries   [  83% ] 10 VUs     2m04.9s/2m30s
+oltp_reads     [  83% ] 50/50 VUs  2m04.9s/2m30.0s
+
+running (2m07.0s), 60/60 VUs, 20064 complete and 0 interrupted iterations
+olap_queries   [  84% ] 10 VUs     2m05.9s/2m30s
+oltp_reads     [  84% ] 50/50 VUs  2m05.9s/2m30.0s
+
+running (2m08.0s), 60/60 VUs, 20274 complete and 0 interrupted iterations
+olap_queries   [  85% ] 10 VUs     2m06.9s/2m30s
+oltp_reads     [  85% ] 50/50 VUs  2m06.9s/2m30.0s
+
+running (2m09.0s), 60/60 VUs, 20473 complete and 0 interrupted iterations
+olap_queries   [  85% ] 10 VUs     2m07.9s/2m30s
+oltp_reads     [  85% ] 50/50 VUs  2m07.9s/2m30.0s
+
+running (2m10.0s), 60/60 VUs, 20675 complete and 0 interrupted iterations
+olap_queries   [  86% ] 10 VUs     2m08.9s/2m30s
+oltp_reads     [  86% ] 50/50 VUs  2m08.9s/2m30.0s
+
+running (2m11.0s), 60/60 VUs, 20875 complete and 0 interrupted iterations
+olap_queries   [  87% ] 10 VUs     2m09.9s/2m30s
+oltp_reads     [  87% ] 50/50 VUs  2m09.9s/2m30.0s
+
+running (2m12.0s), 60/60 VUs, 21074 complete and 0 interrupted iterations
+olap_queries   [  87% ] 10 VUs     2m10.9s/2m30s
+oltp_reads     [  87% ] 50/50 VUs  2m10.9s/2m30.0s
+
+running (2m13.0s), 60/60 VUs, 21284 complete and 0 interrupted iterations
+olap_queries   [  88% ] 10 VUs     2m11.9s/2m30s
+oltp_reads     [  88% ] 50/50 VUs  2m11.9s/2m30.0s
+
+running (2m14.0s), 60/60 VUs, 21493 complete and 0 interrupted iterations
+olap_queries   [  89% ] 10 VUs     2m12.9s/2m30s
+oltp_reads     [  89% ] 50/50 VUs  2m12.9s/2m30.0s
+
+running (2m15.0s), 60/60 VUs, 21707 complete and 0 interrupted iterations
+olap_queries   [  89% ] 10 VUs     2m13.9s/2m30s
+oltp_reads     [  89% ] 50/50 VUs  2m13.9s/2m30.0s
+
+running (2m16.0s), 60/60 VUs, 21909 complete and 0 interrupted iterations
+olap_queries   [  90% ] 10 VUs     2m14.9s/2m30s
+oltp_reads     [  90% ] 50/50 VUs  2m14.9s/2m30.0s
+
+running (2m17.0s), 58/60 VUs, 22115 complete and 0 interrupted iterations
+olap_queries   [  91% ] 10 VUs     2m15.9s/2m30s
+oltp_reads     [  91% ] 48/50 VUs  2m15.9s/2m30.0s
+
+running (2m18.0s), 55/60 VUs, 22315 complete and 0 interrupted iterations
+olap_queries   [  91% ] 10 VUs     2m16.9s/2m30s
+oltp_reads     [  91% ] 45/50 VUs  2m16.9s/2m30.0s
+
+running (2m19.0s), 51/60 VUs, 22498 complete and 0 interrupted iterations
+olap_queries   [  92% ] 10 VUs     2m17.9s/2m30s
+oltp_reads     [  92% ] 41/50 VUs  2m17.9s/2m30.0s
+
+running (2m20.0s), 48/60 VUs, 22665 complete and 0 interrupted iterations
+olap_queries   [  93% ] 10 VUs     2m18.9s/2m30s
+oltp_reads     [  93% ] 38/50 VUs  2m18.9s/2m30.0s
+
+running (2m21.0s), 45/60 VUs, 22827 complete and 0 interrupted iterations
+olap_queries   [  93% ] 10 VUs     2m19.9s/2m30s
+oltp_reads     [  93% ] 35/50 VUs  2m19.9s/2m30.0s
+
+running (2m22.0s), 41/60 VUs, 22970 complete and 0 interrupted iterations
+olap_queries   [  94% ] 10 VUs     2m20.9s/2m30s
+oltp_reads     [  94% ] 31/50 VUs  2m20.9s/2m30.0s
+
+running (2m23.0s), 38/60 VUs, 23108 complete and 0 interrupted iterations
+olap_queries   [  95% ] 10 VUs     2m21.9s/2m30s
+oltp_reads     [  95% ] 28/50 VUs  2m21.9s/2m30.0s
+
+running (2m24.0s), 35/60 VUs, 23221 complete and 0 interrupted iterations
+olap_queries   [  95% ] 10 VUs     2m22.9s/2m30s
+oltp_reads     [  95% ] 25/50 VUs  2m22.9s/2m30.0s
+
+running (2m25.0s), 31/60 VUs, 23332 complete and 0 interrupted iterations
+olap_queries   [  96% ] 10 VUs     2m23.9s/2m30s
+oltp_reads     [  96% ] 21/50 VUs  2m23.9s/2m30.0s
+
+running (2m26.0s), 28/60 VUs, 23420 complete and 0 interrupted iterations
+olap_queries   [  97% ] 10 VUs     2m24.9s/2m30s
+oltp_reads     [  97% ] 18/50 VUs  2m24.9s/2m30.0s
+
+running (2m27.0s), 25/60 VUs, 23502 complete and 0 interrupted iterations
+olap_queries   [  97% ] 10 VUs     2m25.9s/2m30s
+oltp_reads     [  97% ] 15/50 VUs  2m25.9s/2m30.0s
+
+running (2m28.0s), 21/60 VUs, 23564 complete and 0 interrupted iterations
+olap_queries   [  98% ] 10 VUs     2m26.9s/2m30s
+oltp_reads     [  98% ] 11/50 VUs  2m26.9s/2m30.0s
+
+running (2m29.0s), 18/60 VUs, 23620 complete and 0 interrupted iterations
+olap_queries   [  99% ] 10 VUs     2m27.9s/2m30s
+oltp_reads     [  99% ] 08/50 VUs  2m27.9s/2m30.0s
+
+running (2m30.0s), 14/60 VUs, 23653 complete and 0 interrupted iterations
+olap_queries   [  99% ] 10 VUs     2m28.9s/2m30s
+oltp_reads     [  99% ] 04/50 VUs  2m28.9s/2m30.0s
+
+running (2m31.0s), 11/60 VUs, 23689 complete and 0 interrupted iterations
+olap_queries   [ 100% ] 10 VUs     2m29.9s/2m30s
+oltp_reads     [ 100% ] 01/50 VUs  2m29.9s/2m30.0s
+
+     ✓ OLTP 200
+
+     █ setup
+
+     analytics_query_duration.......: avg=169.99ms min=103ms    med=166ms    max=359ms    p(90)=210.79ms p(95)=228ms   
+     analytics_query_errors.........: 0.00%   ✓ 0          ✗ 2243 
+     checks.........................: 100.00% ✓ 21457      ✗ 0    
+     data_received..................: 32 MB   213 kB/s
+     data_sent......................: 10 MB   66 kB/s
+     http_req_blocked...............: avg=12.02µs  min=1.64µs   med=5.26µs   max=41.99ms  p(90)=7.43µs   p(95)=8.64µs  
+     http_req_connecting............: avg=4.95µs   min=0s       med=0s       max=41.87ms  p(90)=0s       p(95)=0s      
+     http_req_duration..............: avg=25.84ms  min=4.37ms   med=9.49ms   max=567.52ms p(90)=37.22ms  p(95)=163.92ms
+       { expected_response:true }...: avg=25.84ms  min=4.37ms   med=9.49ms   max=567.52ms p(90)=37.22ms  p(95)=163.92ms
+     http_req_failed................: 0.00%   ✓ 0          ✗ 23702
+     http_req_receiving.............: avg=350.05µs min=27.31µs  med=313.88µs max=55.22ms  p(90)=480.04µs p(95)=590.58µs
+     http_req_sending...............: avg=33.05µs  min=7.46µs   med=24.71µs  max=13.4ms   p(90)=61.97µs  p(95)=70.83µs 
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       max=0s       p(90)=0s       p(95)=0s      
+     http_req_waiting...............: avg=25.45ms  min=3.94ms   med=9.13ms   max=566.37ms p(90)=36.37ms  p(95)=163.61ms
+     http_reqs......................: 23702   156.36259/s
+     iteration_duration.............: avg=299.82ms min=107.46ms med=276.29ms max=1.07s    p(90)=410.5ms  p(95)=664.72ms
+     iterations.....................: 23700   156.349396/s
+   ✓ score_read_duration............: avg=10.91ms  min=4ms      med=9ms      max=418ms    p(90)=15ms     p(95)=20ms    
+   ✓ score_read_errors..............: 0.00%   ✓ 0          ✗ 21457
+     vus............................: 11      min=0        max=60 
+     vus_max........................: 60      min=60       max=60 
+
+
+running (2m31.6s), 00/60 VUs, 23700 complete and 0 interrupted iterations
+olap_queries ✓ [ 100% ] 10 VUs     2m30s
+oltp_reads   ✓ [ 100% ] 00/50 VUs  2m30s

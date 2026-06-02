@@ -29,7 +29,7 @@ public class ScoreAnalyticsConsumer {
 
     private final AnalyticsJdbcRepository analyticsRepo;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_SCORES, groupId = "sscm-analytics")
+    @KafkaListener(id = "score-analytics", topics = KafkaConfig.TOPIC_SCORES, groupId = "sscm-analytics")
     public void consume(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             log.info("성적 이벤트 수신: type={}", event.getEventType());

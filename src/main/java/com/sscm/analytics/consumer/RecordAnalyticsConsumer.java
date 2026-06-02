@@ -24,7 +24,7 @@ public class RecordAnalyticsConsumer {
 
     private final AnalyticsJdbcRepository analyticsRepo;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_RECORDS, groupId = "sscm-analytics")
+    @KafkaListener(id = "record-analytics", topics = KafkaConfig.TOPIC_RECORDS, groupId = "sscm-analytics")
     public void consume(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             log.info("학생부 이벤트 수신: type={}", event.getEventType());

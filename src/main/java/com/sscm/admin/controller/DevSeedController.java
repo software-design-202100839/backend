@@ -28,6 +28,7 @@ import com.sscm.grade.repository.SubjectRepository;
 import com.sscm.student.entity.RecordCategory;
 import com.sscm.student.entity.StudentRecord;
 import com.sscm.student.repository.StudentRecordRepository;
+import com.sscm.admin.service.LargeScaleSeedService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -114,6 +115,7 @@ public class DevSeedController {
     private final SchoolRepository            schoolRepository;
     private final StudentRecordRepository     studentRecordRepository;
     private final EmbeddingService             embeddingService;
+    private final LargeScaleSeedService        largeScaleSeedService;
 
     // ── ADMIN 단독 시드 (기존 호환) ───────────────────────────
 
@@ -826,6 +828,21 @@ public class DevSeedController {
         log.info("[DEV SEED] 새별중학교 시드 완료");
         return ResponseEntity.ok(ApiResponse.success(new SeedAllResult(results,
                 "새별중학교 — 교사: 새별교사, 학생: 새별학생, 1학년 2반 구성 완료")));
+    }
+
+    // ── 대규모 시드 (3개 학교 × 1,000명) ───────────────────────
+
+    @Operation(summary = "[DEV] 대규모 시드 데이터 생성 (Core)",
+               description = "3개 학교, 학생 3,000명, 성적 90,000건 규모. " +
+                       "JDBC batch insert, Kafka 이벤트 미발행. " +
+                       "reset=true 시 기존 데이터 전체 삭제 후 재생성.")
+    @PostMapping("/seed/large-scale")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> seedLargeScale(
+            @RequestParam(required = false) String key,
+            @RequestParam(defaultValue = "false") boolean reset) {
+        validateSeedKey(key);
+        Map<String, Object> result = largeScaleSeedService.seedCore(reset);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     // ── 피드백/상담 임베딩 시드 ─────────────────────────────────

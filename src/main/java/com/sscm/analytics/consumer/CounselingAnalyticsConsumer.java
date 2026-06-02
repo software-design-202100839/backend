@@ -24,7 +24,7 @@ public class CounselingAnalyticsConsumer {
 
     private final AnalyticsJdbcRepository analyticsRepo;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_COUNSELINGS, groupId = "sscm-analytics")
+    @KafkaListener(id = "counseling-analytics", topics = KafkaConfig.TOPIC_COUNSELINGS, groupId = "sscm-analytics")
     public void consume(AnalyticsEvent<LinkedHashMap<String, Object>> event) {
         try {
             log.info("상담 이벤트 수신: type={}", event.getEventType());

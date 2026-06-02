@@ -56,11 +56,10 @@ SSCM(Smart School Class Management) 프로젝트의 모든 개발 스프린트�
 
 | 리소스 | 스펙 | 엔드포인트/식별자 |
 |--------|------|-------------------|
-| ECS 클러스터 | `sscm-cluster` | backend + frontend + monitoring 서비스 |
+| ECS 클러스터 | `sscm-cluster` | backend + monitoring 서비스 |
 | Backend Task | 0.5 vCPU / 1GB | ECS Fargate |
-| Frontend Task | 0.25 vCPU / 0.5GB | ECS Fargate |
 | Monitoring Task | 0.25 vCPU / 0.5GB | Prometheus + Grafana 사이드카 |
-| ALB | 경로 라우팅 | `/api/*` → backend, `/grafana/*` → monitoring, `/*` → frontend |
+| ALB | 경로 라우팅 | `/api/*` → backend, `/grafana/*` → monitoring |
 | RDS (운영) | db.t3.micro | `sscm-db` (PostgreSQL 16 + pgvector) |
 | RDS (분석) | db.t3.micro | `sscm-analytics-db` (PostgreSQL 16) |
 | ElastiCache Redis | cache.t3.micro | JWT 블랙리스트 L1 캐시 |
@@ -100,6 +99,8 @@ git push develop → GitHub Actions CD → npm build → S3 업로드 → CloudF
 
 ## 부하 테스트 결과
 
+### 기존 Redis 도입 효과 (프로덕션 AWS, 200 VU)
+
 | 항목 | 수치 |
 |------|------|
 | p50 | 297.4ms |
@@ -108,12 +109,44 @@ git push develop → GitHub Actions CD → npm build → S3 업로드 → CloudF
 | 에러율 | 0% |
 | 환경 | 0.5 vCPU / 1GB, 200 VU, 3분 30초 |
 
+### DB 분리 A/B 테스트 (로컬, 2026-06-01 실측)
+
+대규모 시드: 3개 학교, 학생 3,000명, 성적 90,000건, 피드백 18,000건, 상담 9,000건
+
+| 항목 | Case A (미분리) | Case B (OLTP only) | Case B-2 (분리) |
+|------|:---:|:---:|:---:|
+| 시나리오 | OLTP + 분석(운영 DB) | OLTP만 | OLTP + 분석(Analytics DB) |
+| score_read avg | 17.21ms | 9.37ms | 10.91ms |
+| **score_read p95** | **51ms** | **12ms** | **20ms** |
+| score_read med | 10ms | 9ms | 9ms |
+| analytics avg | 120ms | - | 170ms |
+| 에러율 | 0% | 0% | 0% |
+| VU | 50 OLTP + 10 OLAP | 50 OLTP | 50 OLTP + 10 OLAP |
+
+**핵심**: DB 분리 시 동일 분석 부하에서 OLTP p95가 51ms → 20ms (2.6배 개선)
+
+k6 결과 원본: `k6/results/case-a-result.txt`, `case-b-result.txt`, `case-b2-result.txt`
+
+### Kafka Consumer 중단/재개 테스트 (로컬, 2026-06-02 실측)
+
+| 확인 항목 | 결과 |
+|----------|------|
+| Consumer pause/resume API | 200 OK (6개 Consumer 전부) |
+| pause 중 성적 수정 API 성공률 | **100%** (61/61) |
+| pause 중 성적 수정 에러율 | **0%** |
+| resume 후 Analytics DB 반영 | 확인 (student 30: avg 68→79.4, updated_at 변경) |
+
+**핵심**: Consumer가 중단되어도 운영 API는 100% 정상 동작. Kafka에 이벤트가 쌓였다가 Consumer 재개 후 분석 DB에 자동 반영.
+
+k6 결과 원본: `k6/results/kafka-isolation-fixed-result.txt`
+
 ---
 
 ## 현재 Focus
 
 - **발표 시연 준비** (인프라 재기동, 데모 리허설, 수치 확인)
-- 발표 대본 + Q&A 최종 점검
+- DB 분리 A/B 테스트 완료 (p95: 51ms→20ms, 2.6배 개선)
+- Kafka 장애 격리 테스트 완료 (Consumer 중단 시 API 성공률 100%)
 - 로컬 커밋 완료, push는 인프라 올린 후 진행 예정
 
 ---

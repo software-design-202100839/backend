@@ -1,0 +1,662 @@
+
+          /\      |‾‾| /‾‾/   /‾‾/   
+     /\  /  \     |  |/  /   /  /    
+    /  \/    \    |     (   /   ‾‾\  
+   /          \   |  |\  \ |  (‾)  | 
+  / __________ \  |__| \__\ \_____/ .io
+
+     execution: local
+        script: k6/kafka-isolation-test.js
+        output: -
+
+     scenarios: (100.00%) 2 scenarios, 6 max VUs, 10m30s max duration (incl. graceful stop):
+              * consumer_control: 1 iterations shared among 1 VUs (maxDuration: 10m0s, exec: consumerControlScenario, gracefulStop: 30s)
+              * score_updates: 5 looping VUs for 2m30s (exec: scoreUpdateScenario, gracefulStop: 30s)
+
+time="2026-06-01T21:58:48+09:00" level=info msg="[Phase 1] 정상 운영 중... (30s)" source=console
+
+running (00m01.0s), 6/6 VUs, 0 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m00.0s/10m0s  0/1 shared iters
+score_updates      [   0% ] 5 VUs  0m00.0s/2m30s  
+
+running (00m02.0s), 6/6 VUs, 4 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m01.0s/10m0s  0/1 shared iters
+score_updates      [   1% ] 5 VUs  0m01.0s/2m30s  
+
+running (00m03.0s), 6/6 VUs, 10 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m02.0s/10m0s  0/1 shared iters
+score_updates      [   1% ] 5 VUs  0m02.0s/2m30s  
+
+running (00m04.0s), 6/6 VUs, 16 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m03.0s/10m0s  0/1 shared iters
+score_updates      [   2% ] 5 VUs  0m03.0s/2m30s  
+
+running (00m05.0s), 6/6 VUs, 24 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m04.0s/10m0s  0/1 shared iters
+score_updates      [   3% ] 5 VUs  0m04.0s/2m30s  
+
+running (00m06.0s), 6/6 VUs, 31 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m05.0s/10m0s  0/1 shared iters
+score_updates      [   3% ] 5 VUs  0m05.0s/2m30s  
+
+running (00m07.0s), 6/6 VUs, 38 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m06.0s/10m0s  0/1 shared iters
+score_updates      [   4% ] 5 VUs  0m06.0s/2m30s  
+
+running (00m08.0s), 6/6 VUs, 44 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m07.0s/10m0s  0/1 shared iters
+score_updates      [   5% ] 5 VUs  0m07.0s/2m30s  
+
+running (00m09.0s), 6/6 VUs, 50 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m08.0s/10m0s  0/1 shared iters
+score_updates      [   5% ] 5 VUs  0m08.0s/2m30s  
+
+running (00m10.0s), 6/6 VUs, 57 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m09.0s/10m0s  0/1 shared iters
+score_updates      [   6% ] 5 VUs  0m09.0s/2m30s  
+
+running (00m11.0s), 6/6 VUs, 65 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m10.0s/10m0s  0/1 shared iters
+score_updates      [   7% ] 5 VUs  0m10.0s/2m30s  
+
+running (00m12.0s), 6/6 VUs, 70 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m11.0s/10m0s  0/1 shared iters
+score_updates      [   7% ] 5 VUs  0m11.0s/2m30s  
+
+running (00m13.0s), 6/6 VUs, 78 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m12.0s/10m0s  0/1 shared iters
+score_updates      [   8% ] 5 VUs  0m12.0s/2m30s  
+
+running (00m14.0s), 6/6 VUs, 83 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m13.0s/10m0s  0/1 shared iters
+score_updates      [   9% ] 5 VUs  0m13.0s/2m30s  
+
+running (00m15.0s), 6/6 VUs, 91 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m14.0s/10m0s  0/1 shared iters
+score_updates      [   9% ] 5 VUs  0m14.0s/2m30s  
+
+running (00m16.0s), 6/6 VUs, 97 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m15.0s/10m0s  0/1 shared iters
+score_updates      [  10% ] 5 VUs  0m15.0s/2m30s  
+
+running (00m17.0s), 6/6 VUs, 105 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m16.0s/10m0s  0/1 shared iters
+score_updates      [  11% ] 5 VUs  0m16.0s/2m30s  
+
+running (00m18.0s), 6/6 VUs, 110 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m17.0s/10m0s  0/1 shared iters
+score_updates      [  11% ] 5 VUs  0m17.0s/2m30s  
+
+running (00m19.0s), 6/6 VUs, 119 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m18.0s/10m0s  0/1 shared iters
+score_updates      [  12% ] 5 VUs  0m18.0s/2m30s  
+
+running (00m20.0s), 6/6 VUs, 125 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m19.0s/10m0s  0/1 shared iters
+score_updates      [  13% ] 5 VUs  0m19.0s/2m30s  
+
+running (00m21.0s), 6/6 VUs, 131 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m20.0s/10m0s  0/1 shared iters
+score_updates      [  13% ] 5 VUs  0m20.0s/2m30s  
+
+running (00m22.0s), 6/6 VUs, 138 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m21.0s/10m0s  0/1 shared iters
+score_updates      [  14% ] 5 VUs  0m21.0s/2m30s  
+
+running (00m23.0s), 6/6 VUs, 144 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m22.0s/10m0s  0/1 shared iters
+score_updates      [  15% ] 5 VUs  0m22.0s/2m30s  
+
+running (00m24.0s), 6/6 VUs, 151 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m23.0s/10m0s  0/1 shared iters
+score_updates      [  15% ] 5 VUs  0m23.0s/2m30s  
+
+running (00m25.0s), 6/6 VUs, 158 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m24.0s/10m0s  0/1 shared iters
+score_updates      [  16% ] 5 VUs  0m24.0s/2m30s  
+
+running (00m26.0s), 6/6 VUs, 164 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m25.0s/10m0s  0/1 shared iters
+score_updates      [  17% ] 5 VUs  0m25.0s/2m30s  
+
+running (00m27.0s), 6/6 VUs, 170 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m26.0s/10m0s  0/1 shared iters
+score_updates      [  17% ] 5 VUs  0m26.0s/2m30s  
+
+running (00m28.0s), 6/6 VUs, 178 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m27.0s/10m0s  0/1 shared iters
+score_updates      [  18% ] 5 VUs  0m27.0s/2m30s  
+
+running (00m29.0s), 6/6 VUs, 183 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m28.0s/10m0s  0/1 shared iters
+score_updates      [  19% ] 5 VUs  0m28.0s/2m30s  
+
+running (00m30.0s), 6/6 VUs, 188 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m29.0s/10m0s  0/1 shared iters
+score_updates      [  19% ] 5 VUs  0m29.0s/2m30s  
+time="2026-06-01T21:59:18+09:00" level=info msg="[Phase 2] Consumer 중단 요청..." source=console
+time="2026-06-01T21:59:18+09:00" level=info msg="[Phase 2] Consumer 중단됨: {\"status\":\"success\",\"data\":{\"score-analytics\":\"paused\",\"feedback-analytics\":\"paused\",\"counseling-analytics\":\"paused\",\"record-analytics\":\"paused\",\"risk-score\":\"paused\",\"risk-feedback\":\"paused\"}}" source=console
+time="2026-06-01T21:59:18+09:00" level=info msg="[Phase 2] 성적 수정 계속 중... Consumer는 중단 상태 (60s)" source=console
+
+running (00m31.0s), 6/6 VUs, 196 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m30.0s/10m0s  0/1 shared iters
+score_updates      [  20% ] 5 VUs  0m30.0s/2m30s  
+
+running (00m32.0s), 6/6 VUs, 201 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m31.0s/10m0s  0/1 shared iters
+score_updates      [  21% ] 5 VUs  0m31.0s/2m30s  
+
+running (00m33.0s), 6/6 VUs, 208 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m32.0s/10m0s  0/1 shared iters
+score_updates      [  21% ] 5 VUs  0m32.0s/2m30s  
+
+running (00m34.0s), 6/6 VUs, 213 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m33.0s/10m0s  0/1 shared iters
+score_updates      [  22% ] 5 VUs  0m33.0s/2m30s  
+
+running (00m35.0s), 6/6 VUs, 221 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m34.0s/10m0s  0/1 shared iters
+score_updates      [  23% ] 5 VUs  0m34.0s/2m30s  
+
+running (00m36.0s), 6/6 VUs, 227 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m35.0s/10m0s  0/1 shared iters
+score_updates      [  23% ] 5 VUs  0m35.0s/2m30s  
+
+running (00m37.0s), 6/6 VUs, 232 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m36.0s/10m0s  0/1 shared iters
+score_updates      [  24% ] 5 VUs  0m36.0s/2m30s  
+
+running (00m38.0s), 6/6 VUs, 239 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m37.0s/10m0s  0/1 shared iters
+score_updates      [  25% ] 5 VUs  0m37.0s/2m30s  
+
+running (00m39.0s), 6/6 VUs, 246 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m38.0s/10m0s  0/1 shared iters
+score_updates      [  25% ] 5 VUs  0m38.0s/2m30s  
+
+running (00m40.0s), 6/6 VUs, 252 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m39.0s/10m0s  0/1 shared iters
+score_updates      [  26% ] 5 VUs  0m39.0s/2m30s  
+
+running (00m41.0s), 6/6 VUs, 259 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m40.0s/10m0s  0/1 shared iters
+score_updates      [  27% ] 5 VUs  0m40.0s/2m30s  
+
+running (00m42.0s), 6/6 VUs, 266 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m41.0s/10m0s  0/1 shared iters
+score_updates      [  27% ] 5 VUs  0m41.0s/2m30s  
+
+running (00m43.0s), 6/6 VUs, 272 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m42.0s/10m0s  0/1 shared iters
+score_updates      [  28% ] 5 VUs  0m42.0s/2m30s  
+
+running (00m44.0s), 6/6 VUs, 280 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m43.0s/10m0s  0/1 shared iters
+score_updates      [  29% ] 5 VUs  0m43.0s/2m30s  
+
+running (00m45.0s), 6/6 VUs, 287 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m44.0s/10m0s  0/1 shared iters
+score_updates      [  29% ] 5 VUs  0m44.0s/2m30s  
+
+running (00m46.0s), 6/6 VUs, 294 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m45.0s/10m0s  0/1 shared iters
+score_updates      [  30% ] 5 VUs  0m45.0s/2m30s  
+
+running (00m47.0s), 6/6 VUs, 300 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m46.0s/10m0s  0/1 shared iters
+score_updates      [  31% ] 5 VUs  0m46.0s/2m30s  
+
+running (00m48.0s), 6/6 VUs, 306 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m47.0s/10m0s  0/1 shared iters
+score_updates      [  31% ] 5 VUs  0m47.0s/2m30s  
+
+running (00m49.0s), 6/6 VUs, 313 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m48.0s/10m0s  0/1 shared iters
+score_updates      [  32% ] 5 VUs  0m48.0s/2m30s  
+
+running (00m50.0s), 6/6 VUs, 320 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m49.0s/10m0s  0/1 shared iters
+score_updates      [  33% ] 5 VUs  0m49.0s/2m30s  
+
+running (00m51.0s), 6/6 VUs, 327 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m50.0s/10m0s  0/1 shared iters
+score_updates      [  33% ] 5 VUs  0m50.0s/2m30s  
+
+running (00m52.0s), 6/6 VUs, 333 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m51.0s/10m0s  0/1 shared iters
+score_updates      [  34% ] 5 VUs  0m51.0s/2m30s  
+
+running (00m53.0s), 6/6 VUs, 340 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m52.0s/10m0s  0/1 shared iters
+score_updates      [  35% ] 5 VUs  0m52.0s/2m30s  
+
+running (00m54.0s), 6/6 VUs, 348 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m53.0s/10m0s  0/1 shared iters
+score_updates      [  35% ] 5 VUs  0m53.0s/2m30s  
+
+running (00m55.0s), 6/6 VUs, 355 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m54.0s/10m0s  0/1 shared iters
+score_updates      [  36% ] 5 VUs  0m54.0s/2m30s  
+
+running (00m56.0s), 6/6 VUs, 362 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m55.0s/10m0s  0/1 shared iters
+score_updates      [  37% ] 5 VUs  0m55.0s/2m30s  
+
+running (00m57.0s), 6/6 VUs, 367 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m56.0s/10m0s  0/1 shared iters
+score_updates      [  37% ] 5 VUs  0m56.0s/2m30s  
+
+running (00m58.0s), 6/6 VUs, 373 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m57.0s/10m0s  0/1 shared iters
+score_updates      [  38% ] 5 VUs  0m57.0s/2m30s  
+
+running (00m59.0s), 6/6 VUs, 382 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m58.0s/10m0s  0/1 shared iters
+score_updates      [  39% ] 5 VUs  0m58.0s/2m30s  
+
+running (01m00.0s), 6/6 VUs, 388 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  00m59.0s/10m0s  0/1 shared iters
+score_updates      [  39% ] 5 VUs  0m59.0s/2m30s  
+
+running (01m01.0s), 6/6 VUs, 396 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m00.0s/10m0s  0/1 shared iters
+score_updates      [  40% ] 5 VUs  1m00.0s/2m30s  
+
+running (01m02.0s), 6/6 VUs, 401 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m01.0s/10m0s  0/1 shared iters
+score_updates      [  41% ] 5 VUs  1m01.0s/2m30s  
+
+running (01m03.0s), 6/6 VUs, 406 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m02.0s/10m0s  0/1 shared iters
+score_updates      [  41% ] 5 VUs  1m02.0s/2m30s  
+
+running (01m04.0s), 6/6 VUs, 413 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m03.0s/10m0s  0/1 shared iters
+score_updates      [  42% ] 5 VUs  1m03.0s/2m30s  
+
+running (01m05.0s), 6/6 VUs, 420 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m04.0s/10m0s  0/1 shared iters
+score_updates      [  43% ] 5 VUs  1m04.0s/2m30s  
+
+running (01m06.0s), 6/6 VUs, 426 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m05.0s/10m0s  0/1 shared iters
+score_updates      [  43% ] 5 VUs  1m05.0s/2m30s  
+
+running (01m07.0s), 6/6 VUs, 433 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m06.0s/10m0s  0/1 shared iters
+score_updates      [  44% ] 5 VUs  1m06.0s/2m30s  
+
+running (01m08.0s), 6/6 VUs, 439 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m07.0s/10m0s  0/1 shared iters
+score_updates      [  45% ] 5 VUs  1m07.0s/2m30s  
+
+running (01m09.0s), 6/6 VUs, 446 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m08.0s/10m0s  0/1 shared iters
+score_updates      [  45% ] 5 VUs  1m08.0s/2m30s  
+
+running (01m10.0s), 6/6 VUs, 452 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m09.0s/10m0s  0/1 shared iters
+score_updates      [  46% ] 5 VUs  1m09.0s/2m30s  
+
+running (01m11.0s), 6/6 VUs, 458 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m10.0s/10m0s  0/1 shared iters
+score_updates      [  47% ] 5 VUs  1m10.0s/2m30s  
+
+running (01m12.0s), 6/6 VUs, 467 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m11.0s/10m0s  0/1 shared iters
+score_updates      [  47% ] 5 VUs  1m11.0s/2m30s  
+
+running (01m13.0s), 6/6 VUs, 472 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m12.0s/10m0s  0/1 shared iters
+score_updates      [  48% ] 5 VUs  1m12.0s/2m30s  
+
+running (01m14.0s), 6/6 VUs, 478 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m13.0s/10m0s  0/1 shared iters
+score_updates      [  49% ] 5 VUs  1m13.0s/2m30s  
+
+running (01m15.0s), 6/6 VUs, 485 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m14.0s/10m0s  0/1 shared iters
+score_updates      [  49% ] 5 VUs  1m14.0s/2m30s  
+
+running (01m16.0s), 6/6 VUs, 491 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m15.0s/10m0s  0/1 shared iters
+score_updates      [  50% ] 5 VUs  1m15.0s/2m30s  
+
+running (01m17.0s), 6/6 VUs, 498 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m16.0s/10m0s  0/1 shared iters
+score_updates      [  51% ] 5 VUs  1m16.0s/2m30s  
+
+running (01m18.0s), 6/6 VUs, 505 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m17.0s/10m0s  0/1 shared iters
+score_updates      [  51% ] 5 VUs  1m17.0s/2m30s  
+
+running (01m19.0s), 6/6 VUs, 511 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m18.0s/10m0s  0/1 shared iters
+score_updates      [  52% ] 5 VUs  1m18.0s/2m30s  
+
+running (01m20.0s), 6/6 VUs, 518 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m19.0s/10m0s  0/1 shared iters
+score_updates      [  53% ] 5 VUs  1m19.0s/2m30s  
+
+running (01m21.0s), 6/6 VUs, 525 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m20.0s/10m0s  0/1 shared iters
+score_updates      [  53% ] 5 VUs  1m20.0s/2m30s  
+
+running (01m22.0s), 6/6 VUs, 533 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m21.0s/10m0s  0/1 shared iters
+score_updates      [  54% ] 5 VUs  1m21.0s/2m30s  
+
+running (01m23.0s), 6/6 VUs, 538 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m22.0s/10m0s  0/1 shared iters
+score_updates      [  55% ] 5 VUs  1m22.0s/2m30s  
+
+running (01m24.0s), 6/6 VUs, 545 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m23.0s/10m0s  0/1 shared iters
+score_updates      [  55% ] 5 VUs  1m23.0s/2m30s  
+
+running (01m25.0s), 6/6 VUs, 552 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m24.0s/10m0s  0/1 shared iters
+score_updates      [  56% ] 5 VUs  1m24.0s/2m30s  
+
+running (01m26.0s), 6/6 VUs, 557 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m25.0s/10m0s  0/1 shared iters
+score_updates      [  57% ] 5 VUs  1m25.0s/2m30s  
+
+running (01m27.0s), 6/6 VUs, 563 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m26.0s/10m0s  0/1 shared iters
+score_updates      [  57% ] 5 VUs  1m26.0s/2m30s  
+
+running (01m28.0s), 6/6 VUs, 569 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m27.0s/10m0s  0/1 shared iters
+score_updates      [  58% ] 5 VUs  1m27.0s/2m30s  
+
+running (01m29.0s), 6/6 VUs, 576 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m28.0s/10m0s  0/1 shared iters
+score_updates      [  59% ] 5 VUs  1m28.0s/2m30s  
+
+running (01m30.0s), 6/6 VUs, 582 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m29.0s/10m0s  0/1 shared iters
+score_updates      [  59% ] 5 VUs  1m29.0s/2m30s  
+time="2026-06-01T22:00:18+09:00" level=info msg="[Phase 2] Consumer 상태: {\"status\":\"success\",\"data\":{\"score-analytics\":{\"paused\":true,\"running\":true},\"feedback-analytics\":{\"paused\":true,\"running\":true},\"counseling-analytics\":{\"paused\":true,\"running\":true},\"record-analytics\":{\"paused\":true,\"running\":true},\"risk-score\":{\"paused\":true,\"running\":true},\"risk-feedback\":{\"paused\":true,\"running\":true}}}" source=console
+time="2026-06-01T22:00:18+09:00" level=info msg="[Phase 3] Consumer 재개 요청..." source=console
+
+running (01m31.0s), 6/6 VUs, 588 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m30.0s/10m0s  0/1 shared iters
+score_updates      [  60% ] 5 VUs  1m30.0s/2m30s  
+time="2026-06-01T22:00:18+09:00" level=info msg="[Phase 3] Consumer 재개됨: {\"status\":\"success\",\"data\":{\"score-analytics\":\"resumed\",\"feedback-analytics\":\"resumed\",\"counseling-analytics\":\"resumed\",\"record-analytics\":\"resumed\",\"risk-score\":\"resumed\",\"risk-feedback\":\"resumed\"}}" source=console
+time="2026-06-01T22:00:18+09:00" level=info msg="[Phase 3] 밀린 이벤트 처리 중... (60s)" source=console
+
+running (01m32.0s), 6/6 VUs, 597 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m31.0s/10m0s  0/1 shared iters
+score_updates      [  61% ] 5 VUs  1m31.0s/2m30s  
+
+running (01m33.0s), 6/6 VUs, 603 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m32.0s/10m0s  0/1 shared iters
+score_updates      [  61% ] 5 VUs  1m32.0s/2m30s  
+
+running (01m34.0s), 6/6 VUs, 608 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m33.0s/10m0s  0/1 shared iters
+score_updates      [  62% ] 5 VUs  1m33.0s/2m30s  
+
+running (01m35.0s), 6/6 VUs, 613 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m34.0s/10m0s  0/1 shared iters
+score_updates      [  63% ] 5 VUs  1m34.0s/2m30s  
+
+running (01m36.0s), 6/6 VUs, 622 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m35.0s/10m0s  0/1 shared iters
+score_updates      [  63% ] 5 VUs  1m35.0s/2m30s  
+
+running (01m37.0s), 6/6 VUs, 627 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m36.0s/10m0s  0/1 shared iters
+score_updates      [  64% ] 5 VUs  1m36.0s/2m30s  
+
+running (01m38.0s), 6/6 VUs, 636 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m37.0s/10m0s  0/1 shared iters
+score_updates      [  65% ] 5 VUs  1m37.0s/2m30s  
+
+running (01m39.0s), 6/6 VUs, 641 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m38.0s/10m0s  0/1 shared iters
+score_updates      [  65% ] 5 VUs  1m38.0s/2m30s  
+
+running (01m40.0s), 6/6 VUs, 646 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m39.0s/10m0s  0/1 shared iters
+score_updates      [  66% ] 5 VUs  1m39.0s/2m30s  
+
+running (01m41.0s), 6/6 VUs, 656 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m40.0s/10m0s  0/1 shared iters
+score_updates      [  67% ] 5 VUs  1m40.0s/2m30s  
+
+running (01m42.0s), 6/6 VUs, 661 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m41.0s/10m0s  0/1 shared iters
+score_updates      [  67% ] 5 VUs  1m41.0s/2m30s  
+
+running (01m43.0s), 6/6 VUs, 667 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m42.0s/10m0s  0/1 shared iters
+score_updates      [  68% ] 5 VUs  1m42.0s/2m30s  
+
+running (01m44.0s), 6/6 VUs, 676 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m43.0s/10m0s  0/1 shared iters
+score_updates      [  69% ] 5 VUs  1m43.0s/2m30s  
+
+running (01m45.0s), 6/6 VUs, 682 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m44.0s/10m0s  0/1 shared iters
+score_updates      [  69% ] 5 VUs  1m44.0s/2m30s  
+
+running (01m46.0s), 6/6 VUs, 688 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m45.0s/10m0s  0/1 shared iters
+score_updates      [  70% ] 5 VUs  1m45.0s/2m30s  
+
+running (01m47.0s), 6/6 VUs, 695 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m46.0s/10m0s  0/1 shared iters
+score_updates      [  71% ] 5 VUs  1m46.0s/2m30s  
+
+running (01m48.0s), 6/6 VUs, 701 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m47.0s/10m0s  0/1 shared iters
+score_updates      [  71% ] 5 VUs  1m47.0s/2m30s  
+
+running (01m49.0s), 6/6 VUs, 709 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m48.0s/10m0s  0/1 shared iters
+score_updates      [  72% ] 5 VUs  1m48.0s/2m30s  
+
+running (01m50.0s), 6/6 VUs, 716 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m49.0s/10m0s  0/1 shared iters
+score_updates      [  73% ] 5 VUs  1m49.0s/2m30s  
+
+running (01m51.0s), 6/6 VUs, 721 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m50.0s/10m0s  0/1 shared iters
+score_updates      [  73% ] 5 VUs  1m50.0s/2m30s  
+
+running (01m52.0s), 6/6 VUs, 727 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m51.0s/10m0s  0/1 shared iters
+score_updates      [  74% ] 5 VUs  1m51.0s/2m30s  
+
+running (01m53.0s), 6/6 VUs, 733 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m52.0s/10m0s  0/1 shared iters
+score_updates      [  75% ] 5 VUs  1m52.0s/2m30s  
+
+running (01m54.1s), 6/6 VUs, 739 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m53.0s/10m0s  0/1 shared iters
+score_updates      [  75% ] 5 VUs  1m53.0s/2m30s  
+
+running (01m55.1s), 6/6 VUs, 745 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m54.0s/10m0s  0/1 shared iters
+score_updates      [  76% ] 5 VUs  1m54.0s/2m30s  
+
+running (01m56.1s), 6/6 VUs, 753 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m55.0s/10m0s  0/1 shared iters
+score_updates      [  77% ] 5 VUs  1m55.0s/2m30s  
+
+running (01m57.1s), 6/6 VUs, 759 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m56.0s/10m0s  0/1 shared iters
+score_updates      [  77% ] 5 VUs  1m56.0s/2m30s  
+
+running (01m58.1s), 6/6 VUs, 766 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m57.0s/10m0s  0/1 shared iters
+score_updates      [  78% ] 5 VUs  1m57.0s/2m30s  
+
+running (01m59.1s), 6/6 VUs, 774 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m58.0s/10m0s  0/1 shared iters
+score_updates      [  79% ] 5 VUs  1m58.0s/2m30s  
+
+running (02m00.1s), 6/6 VUs, 782 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  01m59.0s/10m0s  0/1 shared iters
+score_updates      [  79% ] 5 VUs  1m59.0s/2m30s  
+
+running (02m01.1s), 6/6 VUs, 788 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m00.0s/10m0s  0/1 shared iters
+score_updates      [  80% ] 5 VUs  2m00.0s/2m30s  
+
+running (02m02.1s), 6/6 VUs, 795 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m01.0s/10m0s  0/1 shared iters
+score_updates      [  81% ] 5 VUs  2m01.0s/2m30s  
+
+running (02m03.1s), 6/6 VUs, 800 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m02.0s/10m0s  0/1 shared iters
+score_updates      [  81% ] 5 VUs  2m02.0s/2m30s  
+
+running (02m04.1s), 6/6 VUs, 809 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m03.0s/10m0s  0/1 shared iters
+score_updates      [  82% ] 5 VUs  2m03.0s/2m30s  
+
+running (02m05.1s), 6/6 VUs, 815 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m04.0s/10m0s  0/1 shared iters
+score_updates      [  83% ] 5 VUs  2m04.0s/2m30s  
+
+running (02m06.1s), 6/6 VUs, 823 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m05.0s/10m0s  0/1 shared iters
+score_updates      [  83% ] 5 VUs  2m05.0s/2m30s  
+
+running (02m07.1s), 6/6 VUs, 830 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m06.0s/10m0s  0/1 shared iters
+score_updates      [  84% ] 5 VUs  2m06.0s/2m30s  
+
+running (02m08.1s), 6/6 VUs, 838 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m07.0s/10m0s  0/1 shared iters
+score_updates      [  85% ] 5 VUs  2m07.0s/2m30s  
+
+running (02m09.1s), 6/6 VUs, 843 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m08.0s/10m0s  0/1 shared iters
+score_updates      [  85% ] 5 VUs  2m08.0s/2m30s  
+
+running (02m10.1s), 6/6 VUs, 849 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m09.0s/10m0s  0/1 shared iters
+score_updates      [  86% ] 5 VUs  2m09.0s/2m30s  
+
+running (02m11.1s), 6/6 VUs, 856 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m10.0s/10m0s  0/1 shared iters
+score_updates      [  87% ] 5 VUs  2m10.0s/2m30s  
+
+running (02m12.1s), 6/6 VUs, 862 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m11.0s/10m0s  0/1 shared iters
+score_updates      [  87% ] 5 VUs  2m11.0s/2m30s  
+
+running (02m13.1s), 6/6 VUs, 869 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m12.0s/10m0s  0/1 shared iters
+score_updates      [  88% ] 5 VUs  2m12.0s/2m30s  
+
+running (02m14.1s), 6/6 VUs, 877 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m13.0s/10m0s  0/1 shared iters
+score_updates      [  89% ] 5 VUs  2m13.0s/2m30s  
+
+running (02m15.1s), 6/6 VUs, 882 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m14.0s/10m0s  0/1 shared iters
+score_updates      [  89% ] 5 VUs  2m14.0s/2m30s  
+
+running (02m16.1s), 6/6 VUs, 887 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m15.0s/10m0s  0/1 shared iters
+score_updates      [  90% ] 5 VUs  2m15.0s/2m30s  
+
+running (02m17.1s), 6/6 VUs, 895 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m16.0s/10m0s  0/1 shared iters
+score_updates      [  91% ] 5 VUs  2m16.0s/2m30s  
+
+running (02m18.1s), 6/6 VUs, 902 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m17.0s/10m0s  0/1 shared iters
+score_updates      [  91% ] 5 VUs  2m17.0s/2m30s  
+
+running (02m19.1s), 6/6 VUs, 909 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m18.0s/10m0s  0/1 shared iters
+score_updates      [  92% ] 5 VUs  2m18.0s/2m30s  
+
+running (02m20.1s), 6/6 VUs, 914 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m19.0s/10m0s  0/1 shared iters
+score_updates      [  93% ] 5 VUs  2m19.0s/2m30s  
+
+running (02m21.1s), 6/6 VUs, 921 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m20.0s/10m0s  0/1 shared iters
+score_updates      [  93% ] 5 VUs  2m20.0s/2m30s  
+
+running (02m22.1s), 6/6 VUs, 927 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m21.0s/10m0s  0/1 shared iters
+score_updates      [  94% ] 5 VUs  2m21.0s/2m30s  
+
+running (02m23.1s), 6/6 VUs, 934 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m22.0s/10m0s  0/1 shared iters
+score_updates      [  95% ] 5 VUs  2m22.0s/2m30s  
+
+running (02m24.1s), 6/6 VUs, 941 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m23.0s/10m0s  0/1 shared iters
+score_updates      [  95% ] 5 VUs  2m23.0s/2m30s  
+
+running (02m25.1s), 6/6 VUs, 947 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m24.0s/10m0s  0/1 shared iters
+score_updates      [  96% ] 5 VUs  2m24.0s/2m30s  
+
+running (02m26.1s), 6/6 VUs, 952 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m25.0s/10m0s  0/1 shared iters
+score_updates      [  97% ] 5 VUs  2m25.0s/2m30s  
+
+running (02m27.1s), 6/6 VUs, 959 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m26.0s/10m0s  0/1 shared iters
+score_updates      [  97% ] 5 VUs  2m26.0s/2m30s  
+
+running (02m28.1s), 6/6 VUs, 967 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m27.0s/10m0s  0/1 shared iters
+score_updates      [  98% ] 5 VUs  2m27.0s/2m30s  
+
+running (02m29.1s), 6/6 VUs, 972 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m28.0s/10m0s  0/1 shared iters
+score_updates      [  99% ] 5 VUs  2m28.0s/2m30s  
+
+running (02m30.1s), 6/6 VUs, 979 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m29.0s/10m0s  0/1 shared iters
+score_updates      [  99% ] 5 VUs  2m29.0s/2m30s  
+
+running (02m31.1s), 6/6 VUs, 986 complete and 0 interrupted iterations
+consumer_control   [   0% ] 1 VUs  02m30.0s/10m0s  0/1 shared iters
+score_updates    ↓ [ 100% ] 5 VUs  2m30s          
+time="2026-06-01T22:01:18+09:00" level=info msg="[완료] 테스트 종료" source=console
+
+     ✗ score update 200
+      ↳  0% — ✓ 0 / ✗ 991
+     ✓ pause 200
+     ✓ resume 200
+
+     █ setup
+
+     checks.........................: 0.20%   ✓ 2        ✗ 991
+     data_received..................: 513 kB  3.4 kB/s
+     data_sent......................: 428 kB  2.8 kB/s
+     http_req_blocked...............: avg=497.54µs min=3.66µs   med=468.81µs max=2.33ms   p(90)=669.73µs p(95)=737.55µs
+     http_req_connecting............: avg=344.37µs min=0s       med=321.54µs max=2.17ms   p(90)=454.65µs p(95)=511.23µs
+     http_req_duration..............: avg=10.19ms  min=4.96ms   med=8.67ms   max=483.36ms p(90)=10.75ms  p(95)=11.52ms 
+       { expected_response:true }...: avg=166.84ms min=9.45ms   med=10.76ms  max=483.36ms p(90)=479.76ms p(95)=481.56ms
+     http_req_failed................: 99.39%  ✓ 991      ✗ 6  
+     http_req_receiving.............: avg=455.62µs min=154.73µs med=432.49µs max=1.58ms   p(90)=632.83µs p(95)=720.15µs
+     http_req_sending...............: avg=100.27µs min=34.96µs  med=84.97µs  max=543.32µs p(90)=163.67µs p(95)=191.96µs
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       max=0s       p(90)=0s       p(95)=0s      
+     http_req_waiting...............: avg=9.64ms   min=4.35ms   med=8.14ms   max=482.64ms p(90)=10.1ms   p(95)=10.78ms 
+     http_reqs......................: 997     6.570932/s
+     iteration_duration.............: avg=909ms    min=508.83ms med=762.91ms max=2m30s    p(90)=956.23ms p(95)=985.11ms
+     iterations.....................: 992     6.537978/s
+     score_update_count.............: 991     6.531388/s
+     score_update_duration..........: avg=9.93ms   min=6ms      med=9ms      max=100ms    p(90)=12ms     p(95)=12ms    
+   ✗ score_update_errors............: 100.00% ✓ 991      ✗ 0  
+     vus............................: 6       min=6      max=6
+     vus_max........................: 6       min=6      max=6
+
+
+running (02m31.7s), 0/6 VUs, 992 complete and 0 interrupted iterations
+consumer_control ✓ [ 100% ] 1 VUs  02m30.0s/10m0s  1/1 shared iters
+score_updates    ✓ [ 100% ] 5 VUs  2m30s          
+time="2026-06-01T22:01:20+09:00" level=error msg="thresholds on metrics 'score_update_errors' have been crossed"
