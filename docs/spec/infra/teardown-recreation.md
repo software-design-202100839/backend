@@ -149,10 +149,7 @@ aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS
 docker build -t 516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-backend:latest .
 docker push 516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-backend:latest
 
-# 프론트엔드
-cd ../sscm-frontend
-docker build -t 516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-frontend:latest .
-docker push 516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-frontend:latest
+# 프론트엔드 Docker 빌드 불필요 — S3+CloudFront로 서빙 (Step 8에서 npm build → S3 sync)
 
 # Prometheus + Grafana (monitoring)
 cd ../sscm-backend/infra/monitoring
@@ -173,7 +170,6 @@ aws cloudformation create-stack \
     ParameterKey=VpcId,ParameterValue=$VPC_ID \
     ParameterKey=SubnetIds,ParameterValue=\"$SUBNET_IDS\" \
     ParameterKey=BackendImage,ParameterValue=516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-backend:latest \
-    ParameterKey=FrontendImage,ParameterValue=516232034601.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-frontend:latest \
   --capabilities CAPABILITY_NAMED_IAM \
   --region ap-northeast-2
 

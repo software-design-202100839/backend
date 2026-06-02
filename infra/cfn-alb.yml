@@ -140,22 +140,7 @@ Resources:
         - Key: Project
           Value: sscm
 
-  FrontendTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: sscm-frontend-tg
-      Port: 80
-      Protocol: HTTP
-      VpcId: !Ref VpcId
-      TargetType: ip
-      HealthCheckPath: /
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
-      Tags:
-        - Key: Project
-          Value: sscm
+  # FrontendTargetGroup 제거 — 프론트엔드는 S3+CloudFront(cfn-cdn.yml)로 서빙
 
   # ----------------------------------------------------------
   # Listener — HTTP (80)
@@ -168,8 +153,11 @@ Resources:
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref FrontendTargetGroup
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: '404'
+            ContentType: text/plain
+            MessageBody: 'SSCM API Server. Frontend is served via CloudFront.'
 
   # ----------------------------------------------------------
   # Listener Rule — /api/* → Backend
@@ -330,11 +318,6 @@ Outputs:
     Value: !Ref BackendTargetGroup
     Export:
       Name: sscm-backend-tg-arn
-
-  FrontendTargetGroupArn:
-    Value: !Ref FrontendTargetGroup
-    Export:
-      Name: sscm-frontend-tg-arn
 
   HttpListenerArn:
     Value: !Ref HttpListener
