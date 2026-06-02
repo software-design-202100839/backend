@@ -131,6 +131,10 @@ sonarqube {
 			"**/config/**",
 			"**/exception/**",
 			"**/SscmApplication.java",
+			// 발표 검증용 seed/loadtest — 권한/키로 보호, 프로덕션 비즈니스 로직 아님
+			"**/admin/service/LargeScaleSeedService.java",
+			"**/admin/controller/DevSeedController.java",
+			"**/analytics/controller/AnalyticsLoadTestController.java",
 		).joinToString(","))
 	}
 }

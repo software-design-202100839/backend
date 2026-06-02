@@ -103,8 +103,12 @@ public class LargeScaleSeedService {
 
     // ── 데이터 초기화 ────────────────────────────────────────
 
+    // Security: seed key로 보호됨 (DevSeedController.validateSeedKey).
+    // 프로덕션 비즈니스 로직이 아닌 발표 검증/부하 테스트 데이터 초기화 전용.
+    @SuppressWarnings("java:S2077") // SQL injection — 테이블명은 하드코딩된 허용 목록이므로 안전
     private void resetAllData() {
         log.info("[LARGE SEED] 전체 데이터 초기화 시작...");
+        // 허용된 테이블명만 사용 (외부 입력 없음)
         String[] tables = {
                 "teacher_report_edits", "ai_generated_reports", "ai_request_logs",
                 "risk_alert_history", "alert_suppressions",
@@ -117,7 +121,7 @@ public class LargeScaleSeedService {
                 "users", "schools"
         };
         for (String table : tables) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table + " CASCADE");
+            jdbcTemplate.execute("TRUNCATE TABLE " + table + " CASCADE"); // NOSONAR — 허용 목록 기반
         }
         log.info("[LARGE SEED] 전체 데이터 초기화 완료");
     }
@@ -490,10 +494,12 @@ public class LargeScaleSeedService {
 
     // ── 유틸리티 ─────────────────────────────────────────────
 
+    @SuppressWarnings("java:S2077") // seqName은 내부 하드코딩된 시퀀스명만 전달됨
     private Long allocateId(String seqName) {
         return jdbcTemplate.queryForObject("SELECT nextval('" + seqName + "')", Long.class);
     }
 
+    @SuppressWarnings("java:S2077")
     private List<Long> allocateIds(String seqName, int count) {
         if (count == 0) return List.of();
         return jdbcTemplate.queryForList(

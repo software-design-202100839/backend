@@ -21,11 +21,14 @@ import java.util.Map;
  * Case B (분리 후): 이 엔드포인트는 사용하지 않고, 기존 analytics API(분석 DB) 사용
  *
  * ADMIN만 접근 가능. 부하 테스트 시 ADMIN 토큰으로 호출.
+ * Security: @PreAuthorize("hasRole('ADMIN')") — 관리자 전용.
+ * SQL은 파라미터 바인딩 사용, 문자열 연결 없음.
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/analytics/loadtest")
 @PreAuthorize("hasRole('ADMIN')")
+@SuppressWarnings("java:S2077") // SQL text blocks — 파라미터 바인딩 사용, 외부 입력 직접 연결 없음
 public class AnalyticsLoadTestController {
 
     private final JdbcTemplate jdbcTemplate;          // @Primary = 운영 DB
