@@ -1,26 +1,31 @@
-name: Backend CD
+name: Deploy Application
 
+# 수동 실행만 — 인프라가 올라간 상태에서 실행
 on:
-  workflow_dispatch:   # 수동 실행도 가능
-  push:
-    branches: [main, develop]
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - 'infra/loadtest/**'
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: '배포 대상'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - backend
+          - frontend
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: sscm-backend
   ECS_CLUSTER: sscm-cluster
   ECS_SERVICE: sscm-backend
+  S3_BUCKET: sscm-frontend-static
 
 jobs:
-  # ── 1단계: Docker 이미지 빌드 → ECR 푸시 ────────────────────────────────────
-  build-and-push:
+  # ── Backend: Docker build → ECR push → ECS deploy ──
+  deploy-backend:
+    if: inputs.deploy_target == 'all' || inputs.deploy_target == 'backend'
     runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.build.outputs.image-tag }}
 
     steps:
       - name: Checkout
@@ -38,7 +43,6 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
-        id: build
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -48,20 +52,6 @@ jobs:
                       $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-  # ── 2단계: ECS 서비스 강제 재배포 ────────────────────────────────────────────
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy to ECS
         run: |
@@ -89,3 +79,49 @@ jobs:
           echo "ALB DNS: $ALB_DNS"
           curl -sf "http://$ALB_DNS/actuator/health" | grep -q '"status":"UP"'
           echo "Health check passed"
+
+  # ── Frontend: npm build → S3 sync → CloudFront invalidation ──
+  deploy-frontend:
+    if: inputs.deploy_target == 'all' || inputs.deploy_target == 'frontend'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          repository: software-design-202100839/frontend
+          ref: develop
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://$S3_BUCKET --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          CF_ID=$(aws cloudformation describe-stacks \
+            --stack-name sscm-cdn \
+            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $CF_ID \
+            --paths "/*"
+          echo "CloudFront invalidation created: $CF_ID"

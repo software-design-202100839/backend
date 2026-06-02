@@ -1,107 +1,124 @@
-# SSCM 인프라 (CloudFormation)
+# SSCM 인프라 & 배포
 
-## 스택 구성
+## 운영 원칙
 
-| 파일 | Jira | 설명 | 배포 순서 |
-|------|------|------|-----------|
-| `cfn-alb.yml` | SSCM-54 | ALB, Target Group, Listener Rule, Parameter Store | 1st |
-| `cfn-ecs-cluster.yml` | SSCM-53 | ECS Cluster, Task Definition, Service, SG, IAM | 2nd |
+| 구분 | 방식 | 도구 |
+|------|------|------|
+| 인프라 프로비저닝 | CloudFormation **수동 실행** (AWS CLI) | `infra/cfn-*.yml` |
+| 애플리케이션 배포 | GitHub Actions **수동 workflow** | `.github/workflows/deploy-app.yml` |
+| CI (테스트/분석) | push/PR 시 자동 실행 | `.github/workflows/ci.yml` |
+| 시드/backfill | 배포 후 **수동 curl** | DevSeedController, AnalyticsAdminController |
+| 비용 관리 | 제출 기간에만 AWS 인프라 운영. 이후 스택 삭제. | |
 
-> **배포 순서 중요**: cfn-alb 스택이 먼저 배포되어야 cfn-ecs-cluster에서 Cross-Stack Reference(ALB SG, Target Group ARN)를 사용할 수 있다.
+---
 
-## 사전 조건
+## 1. 인프라 프로비저닝 (CloudFormation 수동)
 
-1. AWS CLI v2 설치 + `aws configure` 완료
-2. ECR 리포지토리 생성 완료 (`sscm-backend`, `sscm-frontend`)
-3. Docker 이미지 ECR에 push 완료
+### 스택 구성 및 생성 순서
 
-## 배포 방법
+| 순서 | 스택 | 파일 | 소요 | 비고 |
+|:---:|------|------|------|------|
+| 1 | sscm-data | `cfn-data.yml` | ~15분 | RDS x2 + ElastiCache Redis |
+| 2 | sscm-msk | `cfn-msk.yml` | ~30~45분 | MSK Kafka (병목) |
+| 3 | sscm-alb | `cfn-alb.yml` | ~5분 | ALB + SSM Parameter Store |
+| 4 | sscm-ecs | `cfn-ecs-cluster.yml` | ~5분 | ECS Backend Task |
+| 5 | sscm-cdn | `cfn-cdn.yml` | ~5분 | S3 + CloudFront |
+| 6 | sscm-monitoring | `cfn-monitoring.yml` | ~5분 | Prometheus + Grafana |
 
-### Step 1: ALB + Parameter Store 스택
+> Step 1과 2는 병렬 시작 가능. 상세 명령어는 `docs/spec/infra/teardown-recreation.md` 참조.
 
-```bash
-aws cloudformation create-stack \
-  --stack-name sscm-alb \
-  --template-body file://infra/cfn-alb.yml \
-  --parameters \
-    ParameterKey=VpcId,ParameterValue=vpc-0abc123 \
-    ParameterKey=SubnetIds,ParameterValue="subnet-aaa,subnet-bbb" \
-    ParameterKey=DbUrl,ParameterValue="jdbc:postgresql://host:5432/sscm" \
-    ParameterKey=DbUsername,ParameterValue=sscm \
-    ParameterKey=DbPassword,ParameterValue=YOUR_PASSWORD \
-    ParameterKey=JwtSecret,ParameterValue=YOUR_JWT_SECRET \
-    ParameterKey=RedisHost,ParameterValue=redis-host \
-    ParameterKey=EncryptionKey,ParameterValue=YOUR_AES_KEY
+### 재생성 시 하드코딩 업데이트 (3곳)
 
-# 스택 완료 대기
-aws cloudformation wait stack-create-complete --stack-name sscm-alb
-```
+| 파일 | 변경 값 |
+|------|---------|
+| `infra/monitoring/prometheus-prod.yml` | ALB DNS |
+| `SecurityConfig.java` | CloudFront 도메인 (CORS) |
+| 프론트엔드 `.env` 또는 빌드 설정 | API base URL |
 
-### Step 2: ECS 클러스터 스택
+### 스택 삭제 (역순)
 
 ```bash
-aws cloudformation create-stack \
-  --stack-name sscm-ecs \
-  --template-body file://infra/cfn-ecs-cluster.yml \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameters \
-    ParameterKey=VpcId,ParameterValue=vpc-0abc123 \
-    ParameterKey=SubnetIds,ParameterValue="subnet-aaa,subnet-bbb" \
-    ParameterKey=BackendImage,ParameterValue=123456789.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-backend:latest \
-    ParameterKey=FrontendImage,ParameterValue=123456789.dkr.ecr.ap-northeast-2.amazonaws.com/sscm-frontend:latest
-
-# 스택 완료 대기
-aws cloudformation wait stack-create-complete --stack-name sscm-ecs
+aws cloudformation delete-stack --stack-name sscm-monitoring
+aws cloudformation delete-stack --stack-name sscm-cdn
+aws cloudformation delete-stack --stack-name sscm-ecs
+aws cloudformation delete-stack --stack-name sscm-alb
+aws cloudformation delete-stack --stack-name sscm-msk
+aws cloudformation delete-stack --stack-name sscm-data
 ```
 
-### Step 3: 배포 확인
+---
+
+## 2. 애플리케이션 배포 (GitHub Actions 수동)
+
+### deploy-app.yml
+
+`workflow_dispatch`로 수동 실행. 배포 대상: `all`, `backend`, `frontend` 선택.
+
+**Backend:**
+```
+Checkout → Docker build → ECR push → ECS force-new-deployment → Health check
+```
+
+**Frontend:**
+```
+Checkout frontend repo → npm build → S3 sync → CloudFront invalidation
+```
+
+---
+
+## 3. CI (자동)
+
+### ci.yml
+
+push/PR to `develop`/`main` 시 자동 실행.
+
+```
+Gradle test → JaCoCo → SonarCloud → OWASP Dependency Check
+```
+
+---
+
+## 4. 시드 / Backfill / 임베딩 (수동)
+
+인프라 + 애플리케이션 배포 완료 후 순서대로 실행.
 
 ```bash
-# ALB DNS 확인
-aws cloudformation describe-stacks --stack-name sscm-alb \
-  --query 'Stacks[0].Outputs[?OutputKey==`AlbDnsName`].OutputValue' --output text
+ALB_DNS=<ALB DNS>
 
-# ECS 서비스 상태
-aws ecs describe-services --cluster sscm-cluster \
-  --services sscm-backend sscm-frontend \
-  --query 'services[].{name:serviceName,status:status,running:runningCount}'
+# 1. 대규모 시드 (3개 학교, 3,000명, 성적 90,000건)
+curl -X POST "http://$ALB_DNS/api/v1/dev/seed/large-scale?reset=true&key=sscm-seed-2026"
+
+# 2. Analytics Backfill
+TOKEN=$(curl -s -X POST "http://$ALB_DNS/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@sscm.dev","password":"admin1234"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['accessToken'])")
+
+curl -X POST "http://$ALB_DNS/api/v1/analytics/admin/backfill" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3. 임베딩 생성 (RAG 데모용, 일부)
+curl -X POST "http://$ALB_DNS/api/v1/dev/seed/embeddings?key=sscm-seed-2026"
 ```
 
-## Cross-Stack Reference 구조
-
-```
-cfn-alb.yml (sscm-alb 스택)
-  ├── Export: sscm-alb-sg-id        → cfn-ecs-cluster의 SG 인바운드 소스
-  ├── Export: sscm-backend-tg-arn   → cfn-ecs-cluster의 Backend Service LoadBalancers
-  └── Export: sscm-frontend-tg-arn  → cfn-ecs-cluster의 Frontend Service LoadBalancers
-```
-
-## Parameter Store 파라미터
-
-| 경로 | 용도 | 주입 대상 |
-|------|------|-----------|
-| `/sscm/prod/db-url` | PostgreSQL JDBC URL | `DB_URL` |
-| `/sscm/prod/db-username` | DB 사용자명 | `DB_USERNAME` |
-| `/sscm/prod/db-password` | DB 비밀번호 | `DB_PASSWORD` |
-| `/sscm/prod/jwt-secret` | JWT 서명 키 | `JWT_SECRET` |
-| `/sscm/prod/redis-host` | Redis 엔드포인트 | `REDIS_HOST` |
-| `/sscm/prod/encryption-key` | AES-256-GCM 키 | `ENCRYPTION_KEY` |
-
-> 배포 후 AWS 콘솔 > Systems Manager > Parameter Store에서 실제 값으로 교체할 것.
+---
 
 ## ALB 라우팅 규칙
 
 | 우선순위 | 경로 | 대상 |
 |----------|------|------|
+| 5 | `/grafana/*` | Monitoring (3000) |
 | 10 | `/api/*` | Backend (8080) |
-| 20 | `/ws/*` | Backend (8080) — WebSocket |
-| 30 | `/actuator/*` | Backend (8080) — Health/Metrics |
-| default | `/*` | Frontend (80) |
+| 20 | `/ws/*` | Backend (8080) |
+| 30 | `/actuator/*` | Backend (8080) |
+| default | `/*` | 404 Fixed Response |
 
-## 스택 삭제 (역순)
+> 프론트엔드는 CloudFront → S3로 서빙. ALB에 프론트엔드 라우팅 없음.
 
-```bash
-aws cloudformation delete-stack --stack-name sscm-ecs
-aws cloudformation wait stack-delete-complete --stack-name sscm-ecs
-aws cloudformation delete-stack --stack-name sscm-alb
+## Cross-Stack Reference
+
+```
+cfn-alb.yml
+  ├── sscm-alb-sg-id        → cfn-ecs-cluster, cfn-monitoring
+  ├── sscm-backend-tg-arn   → cfn-ecs-cluster
+  └── sscm-http-listener-arn → cfn-monitoring
 ```
