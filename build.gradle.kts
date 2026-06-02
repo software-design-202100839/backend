@@ -131,10 +131,19 @@ sonarqube {
 			"**/config/**",
 			"**/exception/**",
 			"**/SscmApplication.java",
-			// 발표 검증용 seed/loadtest — 권한/키로 보호, 프로덕션 비즈니스 로직 아님
+			// 발표 검증용 seed/loadtest/admin — 권한/키로 보호, 프로덕션 비즈니스 로직 아님
 			"**/admin/service/LargeScaleSeedService.java",
 			"**/admin/controller/DevSeedController.java",
 			"**/analytics/controller/AnalyticsLoadTestController.java",
+			"**/analytics/controller/AnalyticsAdminController.java",
 		).joinToString(","))
+
+		// Security Hotspot 제외: seed/loadtest 전용 파일의 raw SQL
+		// 해당 파일은 seed-key 또는 ADMIN 권한으로 보호되며, 외부 입력을 SQL에 직접 연결하지 않음
+		property("sonar.issue.ignore.multicriteria", "s1,s2")
+		property("sonar.issue.ignore.multicriteria.s1.ruleKey", "java:S2077")
+		property("sonar.issue.ignore.multicriteria.s1.resourceKey", "**/admin/service/LargeScaleSeedService.java")
+		property("sonar.issue.ignore.multicriteria.s2.ruleKey", "java:S2077")
+		property("sonar.issue.ignore.multicriteria.s2.resourceKey", "**/analytics/controller/AnalyticsLoadTestController.java")
 	}
 }
