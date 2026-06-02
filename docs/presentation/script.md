@@ -1,4 +1,7 @@
-# SSCM 발표 대본 (10분)
+# SSCM 발표 대본 (10분) — 초기 버전
+
+> **최종 버전은 [final-presentation.md](./final-presentation.md)를 사용하세요.**
+> 이 파일은 초기 작성 버전이며, final-presentation.md에 대본+구성안+데모가 통합되어 있습니다.
 
 ---
 
