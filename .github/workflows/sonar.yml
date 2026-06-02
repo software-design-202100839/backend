@@ -1,13 +1,13 @@
-name: CI (Build + Test)
+name: SonarCloud Analysis
 
+# main push 또는 수동 실행 — SonarCloud Free plan은 main branch만 분석 가능
 on:
   push:
-    branches: [develop, main]
-  pull_request:
-    branches: [develop, main]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build-and-test:
+  sonar:
     runs-on: ubuntu-latest
 
     env:
@@ -34,6 +34,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -53,19 +55,8 @@ jobs:
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Build and Test
-        run: ./gradlew test --no-daemon
+      - name: Test + JaCoCo + SonarCloud
+        run: ./gradlew jacocoTestReport sonar --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: dev
-
-      - name: Dependency check
-        run: ./gradlew dependencyCheckAnalyze --no-daemon
-        continue-on-error: true
-
-      - name: Upload dependency report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dependency-check-report
-          path: build/reports/dependency-check-report.html
-          retention-days: 14
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
